@@ -1,4 +1,8 @@
+import './style.css';
+import './dashboard-styles.css';
 document.addEventListener("DOMContentLoaded", () => {
+
+
 try {
   const landing = document.getElementById("landing");
   const loginModal = document.getElementById("loginModal");
