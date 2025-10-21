@@ -4,18 +4,6 @@
     {
       "src": "server.js",
       "use": "@vercel/node"
-    },
-    {
-      "src": "**/*.css",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "**/*.js",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "**/*.{jpg,png,ico,html}",
-      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -27,5 +15,10 @@
       "src": "/(.*)",
       "dest": "/server.js"
     }
-  ]
+  ],
+  "functions": {
+    "server.js": {
+      "maxDuration": 30
+    }
+  }
 }
