@@ -1,4 +1,4 @@
-// DOM element initialization with error handling
+document.addEventListener("DOMContentLoaded", () => {
 try {
   const landing = document.getElementById("landing");
   const loginModal = document.getElementById("loginModal");
@@ -1466,3 +1466,4 @@ async function generateAIQuestion(type, userResponse = '') {
     throw error;
   }
 }
+});

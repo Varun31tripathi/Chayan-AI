@@ -1,5 +1,6 @@
 const express = require('express');
-const { pool } = require('../database');
+const { pool, users, interviews } = require('../database');
+const { getSessionStore } = require('../middleware/auth');
 const router = express.Router();
 
 // Get user profile
@@ -8,7 +9,7 @@ router.get('/profile/:sessionToken', async (req, res) => {
     const { sessionToken } = req.params;
     
     // Get session to find user
-    const sessions = require('./auth').sessions || new Map();
+    const sessions = getSessionStore();
     const session = sessions.get(sessionToken);
     
     if (!session) {

@@ -25,8 +25,7 @@ router.post('/register', [
     const { name, email, password } = req.body;
     
     // Check if user exists
-    const [existing] = await pool.execute('SELECT id FROM users WHERE email = ?', [email]);
-    if (existing.length > 0) {
+    if (users.has(email)) {
       return res.status(400).json({ error: 'User already exists' });
     }
 
@@ -34,15 +33,19 @@ router.post('/register', [
     const passwordHash = await bcrypt.hash(password, 10);
     
     // Create user
-    const [result] = await pool.execute(
-      'INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)',
-      [name, email, passwordHash]
-    );
+    const userId = Date.now();
+    users.set(email, {
+      id: userId,
+      name,
+      email,
+      password_hash: passwordHash,
+      created_at: new Date()
+    });
 
     // Generate session
     const sessionToken = crypto.randomBytes(32).toString('hex');
     const sessionData = {
-      userId: result.insertId,
+      userId,
       email,
       name,
       loginTime: Date.now(),
@@ -78,12 +81,11 @@ router.post('/login', [
     const { email, password } = req.body;
     
 
-    const [users] = await pool.execute('SELECT * FROM users WHERE email = ?', [email]);
-    if (users.length === 0) {
+    const { users } = require('../database');
+    const user = users.get(email);
+    if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
-
-    const user = users[0];
     
     // Verify password
     const validPassword = await bcrypt.compare(password, user.password_hash);

@@ -1,6 +1,6 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
-const { pool } = require('../database');
+const { pool, users, interviews } = require('../database');
 const { getSessionStore } = require('../middleware/auth');
 const router = express.Router();
 
@@ -32,25 +32,23 @@ router.post('/save', [ // amazonq-ignore-line
       return res.status(401).json({ error: 'Invalid session' });
     }
 
-    // Save evaluation to database
-    await pool.execute(`
-      INSERT INTO interviews (
-        user_id, role, score, percentage, grade, max_level,
-        technical_terms, skills_demo, experience_shared, detailed_responses, ai_feedback
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [
-      session.userId,
+    // Save evaluation to in-memory storage
+    const interviewId = Date.now();
+    interviews.set(interviewId, {
+      id: interviewId,
+      user_id: session.userId,
       role,
       score,
       percentage,
       grade,
-      maxLevel,
-      metrics.technicalTerms || 0,
-      metrics.skillsDemo || 0,
-      metrics.experienceShared || 0,
-      metrics.detailedResponses || 0,
-      aiFeedback || null
-    ]);
+      max_level: maxLevel,
+      technical_terms: metrics.technicalTerms || 0,
+      skills_demo: metrics.skillsDemo || 0,
+      experience_shared: metrics.experienceShared || 0,
+      detailed_responses: metrics.detailedResponses || 0,
+      ai_feedback: aiFeedback || null,
+      created_at: new Date()
+    });
 
     res.json({ success: true });
   } catch (error) {
@@ -71,15 +69,15 @@ router.get('/history/:sessionToken', async (req, res) => {
       return res.status(401).json({ error: 'Invalid session' });
     }
 
-    const [interviews] = await pool.execute(`
-      SELECT role, score, percentage, grade, max_level, created_at
-      FROM interviews 
-      WHERE user_id = ? 
-      ORDER BY created_at DESC 
-      LIMIT 10
-    `, [session.userId]);
+    const userInterviews = Array.from(interviews.values())
+      .filter(interview => interview.user_id === session.userId)
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, 10)
+      .map(({ role, score, percentage, grade, max_level, created_at }) => ({
+        role, score, percentage, grade, max_level, created_at
+      }));
 
-    res.json({ interviews });
+    res.json({ interviews: userInterviews });
   } catch (error) {
     console.error('Get history error:', error);
     res.status(500).json({ error: 'Failed to get history' });
