@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🏆ChayanAI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="dashboard-styles.css" />
+</head>
+<body>
+
+  <!-- Landing Page -->
+  <section id="landing" class="active">
+    <nav class="navbar">
+      <div class="nav-brand">
+        <h2>🏆ChayanAI</h2>
+      </div>
+      <div class="nav-menu" id="navMenu">
+        <a href="#" class="nav-link">Features</a>
+        <a href="about.html" class="nav-link">About</a>
+        <a href="#" class="nav-link">Contact</a>
+        <button id="loginNavBtn" class="nav-btn">Login</button>
+        <button id="signupNavBtn" class="nav-btn secondary">Sign Up</button>
+        <button id="adminNavBtn" class="nav-btn admin">Admin Login</button>
+      </div>
+      <div class="nav-toggle" id="navToggle">
+        <span class="bar"></span>
+        <span class="bar"></span>
+        <span class="bar"></span>
+      </div>
+    </nav>
+    <div class="hero">
+      <div class="hero-content">
+        <h1>Crack Your Dream Job with AI-Powered Mock Interview</h1>
+        <p>Practice, analyze, and improve your interview performance using real-time AI feedback and industry-level questions tailored to your goals.</p>
+        <button id="getStartedBtn">Get Started</button>
+      </div>
+      <div class="hero-image">
+        <img src="images/pfp1.jpg" alt="AI Interview Platform" />
+      </div>
+    </div>
+  </section>
+
+  <!-- Login/Signup Popup -->
+  <div id="loginModal" class="modal">
+    <div class="modal-content">
+      <span class="close" id="closeModal">&times;</span>
+      <div id="loginForm">
+        <h1>Welcome Back!</h1>
+        <p>Sign in to continue to your AI Interview.</p>
+        <input type="email" id="username" placeholder="Email" required />
+        <input type="password" id="password" placeholder="Password" minlength="6" required />
+        <button id="loginBtn">Login</button>
+        <p class="note">Demo: demo@test.com / demo123</p>
+        <p class="switch-form">Don't have an account? <a href="#" id="showSignup">Sign up</a></p>
+      </div>
+      <div id="signupForm" style="display:none">
+        <h1>Create Account</h1>
+        <p>Join ChayanAI to start practicing.</p>
+        <input type="text" id="signupName" placeholder="Full Name" required />
+        <input type="email" id="signupEmail" placeholder="Email" required />
+        <input type="password" id="signupPassword" placeholder="Password" minlength="6" required />
+        <input type="password" id="confirmPassword" placeholder="Confirm Password" minlength="6" required />
+        <button id="signupBtn">Sign Up</button>
+        <p class="note">Account required to access interviews</p>
+        <p class="switch-form">Already have an account? <a href="#" id="showLogin">Login</a></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Login Modal -->
+  <div id="adminModal" class="modal">
+    <div class="modal-content">
+      <span class="close" id="closeAdminModal">&times;</span>
+      <h1>Admin Access</h1>
+      <p>Enter admin credentials to access dashboard</p>
+      <input type="text" id="adminUsername" placeholder="Admin Username" required />
+      <input type="password" id="adminPassword" placeholder="Admin Password" required />
+      <button id="adminLoginBtn">Access Dashboard</button>
+
+    </div>
+  </div>
+
+  <!-- Home Screen -->
+  <section id="home">
+    <div class="card">
+      <h1>Welcome to InterviewAI</h1>
+      <p>Practice technical interviews with AI-powered feedback</p>
+      <button id="selectRoleBtn">Select Role & Start</button>
+      <button id="dashboardBtn" class="secondary">View Dashboard</button>
+      <button id="logoutBtn" class="secondary">Logout</button>
+    </div>
+  </section>
+
+  <!-- User Dashboard Screen -->
+  <section id="dashboard">
+    <div class="card">
+      <h1>📊 Your Dashboard</h1>
+      <div id="dashboardContent">
+        <div class="loading">Loading your results...</div>
+      </div>
+      <button id="backFromDashboardBtn" class="secondary">Back to Home</button>
+    </div>
+  </section>
+
+  <!-- Role Selection Screen -->
+  <section id="roleSelection">
+    <div class="card">
+      <h1>Choose Your Role</h1>
+      <p>Select the position you want to practice for:</p>
+
+      <div class="role-grid">
+        <div class="role-card" data-role="Frontend Developer">
+          <h3>💻 Frontend Developer</h3>
+          <p>HTML, CSS, JavaScript, React</p>
+        </div>
+        <div class="role-card" data-role="Backend Developer">
+          <h3>⚙️ Backend Developer</h3>
+          <p>APIs, Databases, Server Architecture</p>
+        </div>
+        <div class="role-card" data-role="Data Scientist">
+          <h3>📊 Data Scientist</h3>
+          <p>Python, ML, Statistics, Analytics</p>
+        </div>
+        <div class="role-card" data-role="UI/UX Designer">
+          <h3>🎨 UI/UX Designer</h3>
+          <p>Design Systems, User Research</p>
+        </div>
+      </div>
+
+      <button id="backToHomeBtn" class="secondary">Back</button>
+    </div>
+  </section>
+
+  <!-- Interview Preparation Screen -->
+  <section id="preparation">
+    <div class="card">
+      <h1>Interview Preparation</h1>
+      <p id="selectedRoleText">You selected: <strong></strong></p>
+      <div class="prep-info">
+        <h3>📋 What to Expect:</h3>
+        <ul>
+          <li>5-8 technical questions</li>
+          <li>Progressive difficulty levels</li>
+          <li>Voice or text responses</li>
+          <li>Real-time AI feedback</li>
+        </ul>
+        <h3>💡 Tips:</h3>
+        <ul>
+          <li>Speak clearly and concisely</li>
+          <li>Provide specific examples</li>
+          <li>Think out loud</li>
+        </ul>
+      </div>
+      <button id="startInterviewBtn">Start Interview</button>
+      <button id="backToRoleBtn" class="secondary">Change Role</button>
+    </div>
+  </section>
+
+  <!-- Interview Screen -->
+  <section id="interview">
+    <header>
+      <h2>AI Interview Session</h2>
+      <div class="timer-display" id="timerDisplay">00:00</div>
+      <div class="progress-bar" role="progressbar" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100" aria-label="Interview Progress">
+        <div id="progress"></div>
+      </div>
+    </header>
+
+    <div id="chatBox" class="chat-box">
+      <div class="message ai">Hi there! Let’s begin. Tell me about yourself.</div>
+    </div>
+
+    <div class="input-area">
+      <input type="text" id="userInput" placeholder="Type your answer..." />
+      <button id="micBtn" class="mic-btn" title="Record voice answer">🎤</button>
+      <button id="cameraBtn" class="camera-btn" title="Start camera recording">📷</button>
+      <button id="voiceBtn" class="voice-btn" title="Toggle AI voice">🔊</button>
+      <button id="sendBtn">Send</button>
+    </div>
+    <video id="cameraPreview" autoplay muted style="position:fixed;bottom:20px;right:20px;width:200px;height:150px;border-radius:10px;border:2px solid #3b82f6;display:none"></video>
+  </section>
+
+  <!-- Summary Screen -->
+  <section id="summary">
+    <div class="summary-container">
+      <div class="summary-header">
+        <div class="completion-icon">✅</div>
+        <h1>Interview Complete</h1>
+        <p>Great job! Here's your performance summary</p>
+      </div>
+      <div class="summary-content">
+        <!-- Content will be populated by JavaScript -->
+      </div>
+      <div class="summary-actions">
+        <button id="homeBtn" class="primary-btn">Start New Interview</button>
+      </div>
+    </div>
+  </section>
+
+<script src="script.js"></script>
+</body>
+</html>

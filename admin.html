@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - InterviewAI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: 'Inter', sans-serif; 
+      background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+    .container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+    .header { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      margin-bottom: 2rem;
+      background: rgba(30, 41, 59, 0.8);
+      backdrop-filter: blur(20px);
+      padding: 1.5rem 2rem;
+      border-radius: 16px;
+      border: 1px solid rgba(148, 163, 184, 0.1);
+    }
+    .header h1 { 
+      background: linear-gradient(135deg, #60a5fa, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-size: 2rem;
+      font-weight: 700;
+    }
+    .logout-btn {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+    .logout-btn:hover { transform: translateY(-2px); }
+    .stats-grid { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
+      gap: 1.5rem; 
+      margin-bottom: 2rem; 
+    }
+    .stat-card { 
+      background: rgba(30, 41, 59, 0.8);
+      backdrop-filter: blur(20px);
+      padding: 2rem;
+      border-radius: 16px;
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      text-align: center;
+    }
+    .stat-number { 
+      font-size: 3rem; 
+      font-weight: 700; 
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+    .stat-label { color: #cbd5e1; font-size: 1.1rem; font-weight: 500; }
+    .users-section {
+      background: rgba(30, 41, 59, 0.8);
+      backdrop-filter: blur(20px);
+      border-radius: 16px;
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      overflow: hidden;
+    }
+    .section-header {
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+    }
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #e2e8f0;
+    }
+    .users-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .users-table th,
+    .users-table td {
+      padding: 1rem 2rem;
+      text-align: left;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+    }
+    .users-table th {
+      background: rgba(15, 23, 42, 0.5);
+      font-weight: 600;
+      color: #cbd5e1;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .users-table td {
+      color: #e2e8f0;
+    }
+    .users-table tr:hover {
+      background: rgba(59, 130, 246, 0.1);
+    }
+    .action-btn {
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+    .action-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+    .loading {
+      text-align: center;
+      padding: 3rem;
+      color: #cbd5e1;
+      font-size: 1.1rem;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      color: #94a3b8;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-high { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+    .badge-medium { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+    .badge-low { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+    @media (max-width: 768px) {
+      .container { padding: 1rem; }
+      .header { flex-direction: column; gap: 1rem; text-align: center; }
+      .users-table { font-size: 0.875rem; }
+      .users-table th,
+      .users-table td { padding: 0.75rem 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🛡️ Admin Dashboard</h1>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+    
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-number" id="totalUsers">-</span>
+        <div class="stat-label">Total Users</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-number" id="totalInterviews">-</span>
+        <div class="stat-label">Total Interviews</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-number" id="avgScore">-</span>
+        <div class="stat-label">Average Score</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-number" id="activeToday">-</span>
+        <div class="stat-label">Active Today</div>
+      </div>
+    </div>
+
+    <div class="users-section">
+      <div class="section-header">
+        <h2 class="section-title">User Management</h2>
+      </div>
+      
+      <div id="loading" class="loading">Loading user data...</div>
+      
+      <table class="users-table" id="usersTable" style="display:none">
+        <thead>
+          <tr>
+            <th>User ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Interviews</th>
+            <th>Avg Score</th>
+            <th>Performance</th>
+            <th>Joined</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="usersBody"></tbody>
+      </table>
+      
+      <div id="emptyState" class="empty-state" style="display:none">
+        <h3>No users found</h3>
+        <p>Users will appear here once they register</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Check admin access
+    if (!sessionStorage.getItem('adminAccess')) {
+      window.location.href = '/';
+    }
+    
+    async function loadDashboard() {
+      try {
+        const adminToken = sessionStorage.getItem('adminAccess');
+        const response = await fetch('/api/users/all', {
+          headers: {
+            'X-Admin-Token': adminToken
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.users && data.users.length > 0) {
+          displayStats(data.users);
+          displayUsers(data.users);
+        } else {
+          showEmptyState();
+        }
+      } catch (error) {
+        console.error('Failed to load dashboard:', error);
+        document.getElementById('loading').innerHTML = `
+          <h3>⚠️ Failed to load data</h3>
+          <p>Error: ${error.message}</p>
+          <p>Make sure the server is running on port 5500</p>
+          <button onclick="loadDashboard()" style="margin-top:1rem;padding:0.5rem 1rem;background:#3b82f6;color:white;border:none;border-radius:4px;cursor:pointer">Retry</button>
+        `;
+      }
+    }
+
+    function displayStats(users) {
+      const totalUsers = users.length;
+      const totalInterviews = users.reduce((sum, user) => sum + (user.total_interviews || 0), 0);
+      const avgScore = users.reduce((sum, user) => sum + (user.avg_score || 0), 0) / users.length;
+      const activeToday = users.filter(user => {
+        const today = new Date().toDateString();
+        return new Date(user.created_at).toDateString() === today;
+      }).length;
+
+      document.getElementById('totalUsers').textContent = totalUsers;
+      document.getElementById('totalInterviews').textContent = totalInterviews;
+      document.getElementById('avgScore').textContent = avgScore ? Math.round(avgScore) + '%' : '0%';
+      document.getElementById('activeToday').textContent = activeToday;
+    }
+
+    function displayUsers(users) {
+      const tbody = document.getElementById('usersBody');
+      tbody.innerHTML = users.map(user => {
+        const avgScore = user.avg_score || 0;
+        const performanceBadge = avgScore >= 75 ? 'badge-high' : avgScore >= 50 ? 'badge-medium' : 'badge-low';
+        const performanceText = avgScore >= 75 ? 'Excellent' : avgScore >= 50 ? 'Good' : 'Needs Work';
+        
+        return `
+          <tr>
+            <td>#${user.id}</td>
+            <td>${user.name}</td>
+            <td>${user.email}</td>
+            <td>${user.total_interviews || 0}</td>
+            <td>${avgScore ? Math.round(avgScore) + '%' : 'N/A'}</td>
+            <td><span class="badge ${performanceBadge}">${performanceText}</span></td>
+            <td>${new Date(user.created_at).toLocaleDateString()}</td>
+            <td>
+              <button class="action-btn" onclick="viewUserDetails(${user.id}, '${user.name}')">
+                View Details
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+      
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('usersTable').style.display = 'table';
+    }
+
+    function showEmptyState() {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('emptyState').style.display = 'block';
+      
+      // Show demo data for empty state
+      document.getElementById('totalUsers').textContent = '0';
+      document.getElementById('totalInterviews').textContent = '0';
+      document.getElementById('avgScore').textContent = '0%';
+      document.getElementById('activeToday').textContent = '0';
+    }
+
+    async function viewUserDetails(userId, userName) {
+      try {
+        const adminToken = sessionStorage.getItem('adminAccess');
+        const response = await fetch(`/api/users/interviews/${userId}`, {
+          headers: {
+            'X-Admin-Token': adminToken
+          }
+        });
+        const data = await response.json();
+        
+        if (data.interviews && data.interviews.length > 0) {
+          const interviews = data.interviews.map(interview => 
+            `📋 ${interview.role}\n` +
+            `   Score: ${interview.percentage}% (${interview.grade})\n` +
+            `   Level: ${interview.max_level}\n` +
+            `   Date: ${new Date(interview.created_at).toLocaleDateString()}\n` +
+            `   Technical Terms: ${interview.technical_terms}\n` +
+            `   Skills Demo: ${interview.skills_demo}\n` +
+            `   Experience: ${interview.experience_shared}\n`
+          ).join('\n');
+          
+          alert(`📊 Interview History for ${userName}\n\n${interviews}`);
+        } else {
+          alert(`📊 Interview History for ${userName}\n\nNo interviews completed yet.`);
+        }
+      } catch (error) {
+        alert('❌ Failed to load interview data. Please try again.');
+        console.error('Error loading user details:', error);
+      }
+    }
+
+    function logout() {
+      if (confirm('Are you sure you want to logout?')) {
+        sessionStorage.removeItem('adminAccess');
+        window.location.href = '/';
+      }
+    }
+
+    // Load dashboard on page load
+    loadDashboard();
+    
+    // Auto-refresh every 30 seconds
+    setInterval(loadDashboard, 30000);
+  </script>
+</body>
+</html>
