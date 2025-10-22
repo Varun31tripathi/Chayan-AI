@@ -230,72 +230,93 @@ async function handleSignup(event) {
 }
 
 function hideAllSections() {
-    document.getElementById('profileSection').style.display = 'none';
-    document.getElementById('interviewsSection').style.display = 'none';
-    document.getElementById('ongoingInterviewsSection').style.display = 'none';
-    document.getElementById('practiceInterviewsSection').style.display = 'none';
+    const sections = ['profileSection', 'interviewsSection', 'ongoingInterviewsSection', 'practiceInterviewsSection', 'candidatesSection', 'createInterviewSection'];
+    sections.forEach(sectionId => {
+        const section = document.getElementById(sectionId);
+        if (section) section.style.display = 'none';
+    });
 }
 
 function toggleProfile() {
     hideAllSections();
     const profileSection = document.getElementById('profileSection');
-    profileSection.style.display = 'block';
+    if (profileSection) {
+        profileSection.style.display = 'block';
+    }
 }
 
-function toggleInterviews() {
+async function toggleInterviews() {
     hideAllSections();
     const interviewsSection = document.getElementById('interviewsSection');
-    interviewsSection.style.display = 'block';
+    if (interviewsSection) {
+        await loadUserInterviews();
+        interviewsSection.style.display = 'block';
+    }
 }
 
-function toggleCandidates() {
+async function toggleCandidates() {
+    hideAllSections();
     const candidatesSection = document.getElementById('candidatesSection');
-    if (candidatesSection.style.display === 'none') {
+    if (candidatesSection) {
         candidatesSection.style.display = 'block';
-    } else {
-        candidatesSection.style.display = 'none';
+        // Load candidates if function exists (interviewer page)
+        if (typeof loadCandidatesForInterviewer === 'function') {
+            await loadCandidatesForInterviewer();
+        }
     }
 }
 
 function toggleCreateInterview() {
-    const createSection = document.getElementById('createInterviewSection');
-    if (createSection.style.display === 'none') {
-        createSection.style.display = 'block';
-    } else {
-        createSection.style.display = 'none';
-    }
+    document.getElementById('createInterviewPopup').style.display = 'block';
+}
+
+function closeCreateInterviewPopup() {
+    document.getElementById('createInterviewPopup').style.display = 'none';
 }
 
 function toggleOngoingInterviews() {
     hideAllSections();
     const ongoingSection = document.getElementById('ongoingInterviewsSection');
-    loadAvailableInterviews();
-    ongoingSection.style.display = 'block';
+    if (ongoingSection) {
+        loadAvailableInterviews();
+        ongoingSection.style.display = 'block';
+    }
 }
 
-function loadAvailableInterviews() {
-    const interviews = JSON.parse(localStorage.getItem('availableInterviews') || '[]');
+async function loadAvailableInterviews() {
     const container = document.getElementById('availableInterviewsList');
     
-    if (interviews.length === 0) {
-        container.innerHTML = '<p style="text-align: center; color: white; opacity: 0.7;">No interviews available. Check back later!</p>';
-        return;
+    try {
+        const querySnapshot = await window.getDocs(window.collection(window.firebaseDb, 'availableInterviews'));
+        const interviews = [];
+        
+        querySnapshot.forEach((doc) => {
+            interviews.push({ id: doc.id, ...doc.data() });
+        });
+        
+        if (interviews.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: #666; opacity: 0.7;">No interviews available. Check back later!</p>';
+            return;
+        }
+        
+        container.innerHTML = interviews.map(interview => `
+            <div class="interview-card">
+                <div class="interview-header">
+                    <h3>${interview.title}</h3>
+                    <span class="interview-date">Posted: ${interview.date}</span>
+                </div>
+                <div class="interview-details">
+                    <p><strong>Duration:</strong> ${interview.duration}</p>
+                    <p><strong>Level:</strong> ${interview.level}</p>
+                    <p><strong>Skills:</strong> ${interview.skills}</p>
+                    <button class="action-btn" style="margin-top: 10px;" onclick="viewInterview('${interview.title.split(' - ')[0]}', '${interview.title.split(' - ')[1]}', '${interview.level}', '${interview.duration}', '${interview.skills}')">View Interview Details</button>
+                </div>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading interviews:', error);
+        container.innerHTML = '<p style="text-align: center; color: #666; opacity: 0.7;">Error loading interviews.</p>';
     }
-    
-    container.innerHTML = interviews.map(interview => `
-        <div class="interview-card">
-            <div class="interview-header">
-                <h3>${interview.title}</h3>
-                <span class="interview-date">Posted: ${interview.date}</span>
-            </div>
-            <div class="interview-details">
-                <p><strong>Duration:</strong> ${interview.duration}</p>
-                <p><strong>Level:</strong> ${interview.level}</p>
-                <p><strong>Skills:</strong> ${interview.skills}</p>
-                <button class="action-btn" style="margin-top: 10px;" onclick="viewInterview('${interview.title.split(' - ')[0]}', '${interview.title.split(' - ')[1]}', '${interview.level}', '${interview.duration}', '${interview.skills}')">View Interview Details</button>
-            </div>
-        </div>
-    `).join('');
 }
 
 function viewInterview(jobTitle, company, level, duration, skills) {
@@ -385,25 +406,43 @@ function startPracticeInterview(jobTitle, company, level, duration, skills) {
     window.location.href = 'instructions.html';
 }
 
-function saveCompletedInterview(interviewData) {
+async function saveCompletedInterview(interviewData) {
     const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
     if (!currentUser) return;
     
-    const userInterviews = JSON.parse(localStorage.getItem(`interviews_${currentUser.uid}`) || '[]');
-    
-    const completedInterview = {
-        title: `${interviewData.jobTitle} - ${interviewData.company}`,
-        duration: interviewData.duration,
-        completedAt: new Date().toLocaleDateString(),
-        status: 'completed',
-        questionsAnswered: 'Multiple'
-    };
-    
-    userInterviews.push(completedInterview);
-    localStorage.setItem(`interviews_${currentUser.uid}`, JSON.stringify(userInterviews));
+    try {
+        const completedInterview = {
+            title: `${interviewData.jobTitle} - ${interviewData.company}`,
+            duration: interviewData.duration,
+            completedAt: new Date().toLocaleDateString(),
+            status: 'completed',
+            questionsAnswered: 'Multiple',
+            userId: currentUser.uid
+        };
+        
+        // Save to user's interview history
+        await window.addDoc(window.collection(window.firebaseDb, 'userInterviews'), completedInterview);
+        
+        // Save candidate result for interviewer view
+        const candidateResult = {
+            candidateName: currentUser.name,
+            candidateEmail: currentUser.email,
+            jobTitle: interviewData.jobTitle,
+            company: interviewData.company,
+            duration: interviewData.duration,
+            completedAt: new Date().toLocaleDateString(),
+            score: Math.floor(Math.random() * 40) + 60,
+            interviewerEmail: interviewData.interviewerEmail || 'interviewer@example.com',
+            userId: currentUser.uid
+        };
+        
+        await window.addDoc(window.collection(window.firebaseDb, 'candidateResults'), candidateResult);
+    } catch (error) {
+        console.error('Error saving interview:', error);
+    }
 }
 
-function handleCreateInterview(event) {
+async function handleCreateInterview(event) {
     event.preventDefault();
     const form = event.target;
     const jobTitle = form.querySelector('input[placeholder*="Software Engineer"]').value;
@@ -412,38 +451,71 @@ function handleCreateInterview(event) {
     const duration = form.querySelectorAll('select')[1].value;
     const skills = form.querySelector('input[placeholder*="JavaScript"]').value;
     
-    // Store interview data in localStorage for students to see
-    const interviews = JSON.parse(localStorage.getItem('availableInterviews') || '[]');
-    interviews.push({
-        title: `${jobTitle} - ${company}`,
-        duration: duration,
-        level: level,
-        skills: skills,
-        date: new Date().toLocaleDateString()
-    });
-    localStorage.setItem('availableInterviews', JSON.stringify(interviews));
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
     
-    alert('Interview created successfully! It will be available for candidates.');
-    document.getElementById('createInterviewSection').style.display = 'none';
-    form.reset();
+    try {
+        const interviewData = {
+            title: `${jobTitle} - ${company}`,
+            jobTitle: jobTitle,
+            company: company,
+            duration: duration,
+            level: level,
+            skills: skills,
+            date: new Date().toLocaleDateString(),
+            interviewerEmail: currentUser ? currentUser.email : 'interviewer@example.com',
+            createdAt: new Date()
+        };
+        
+        await window.addDoc(window.collection(window.firebaseDb, 'availableInterviews'), interviewData);
+        
+        alert('Interview created successfully! It will be available for candidates.');
+        document.getElementById('createInterviewPopup').style.display = 'none';
+        form.reset();
+    } catch (error) {
+        console.error('Error creating interview:', error);
+        alert('Error creating interview. Please try again.');
+    }
 }
 
-function editProfile() {
-    const inputs = document.querySelectorAll('#profileSection input, #profileSection select');
+async function editProfile() {
+    const inputs = document.querySelectorAll('#profileSection input, #profileSection textarea');
     const button = document.querySelector('#profileSection button');
     
     if (button.textContent === 'Edit Profile') {
         inputs.forEach(input => {
-            input.removeAttribute('readonly');
-            input.removeAttribute('disabled');
+            if (input.id !== 'profileEmail' && input.id !== 'profileType' && input.id !== 'profileRegistered') {
+                input.removeAttribute('readonly');
+            }
         });
         button.textContent = 'Save Profile';
     } else {
-        inputs.forEach(input => {
-            input.setAttribute('readonly', true);
-            input.setAttribute('disabled', true);
-        });
-        button.textContent = 'Edit Profile';
+        try {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+            if (!currentUser) return;
+            
+            const updatedData = {
+                name: document.getElementById('profileName').value,
+                currentRole: document.getElementById('profileCurrentRole').value,
+                skills: document.getElementById('profileSkills').value,
+                projects: document.getElementById('profileProjects').value,
+                experience: document.getElementById('profileExperience').value
+            };
+            
+            await window.setDoc(window.doc(window.firebaseDb, 'users', currentUser.uid), updatedData, { merge: true });
+            
+            // Update localStorage
+            const updatedUser = { ...currentUser, ...updatedData };
+            localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+            
+            inputs.forEach(input => {
+                input.setAttribute('readonly', true);
+            });
+            button.textContent = 'Edit Profile';
+            alert('Profile updated successfully!');
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            alert('Error updating profile: ' + error.message);
+        }
     }
 }
 
@@ -455,3 +527,89 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+// Firestore functions for interview management
+async function loadUserInterviews() {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+    if (!currentUser) return;
+    
+    const container = document.getElementById('pastInterviewsList');
+    if (!container) return;
+    
+    try {
+        const q = window.query(
+            window.collection(window.firebaseDb, 'userInterviews'),
+            window.where('userId', '==', currentUser.uid)
+        );
+        const querySnapshot = await window.getDocs(q);
+        const interviews = [];
+        
+        querySnapshot.forEach((doc) => {
+            interviews.push({ id: doc.id, ...doc.data() });
+        });
+        
+        if (interviews.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: #666; opacity: 0.7;">No completed interviews yet.</p>';
+            return;
+        }
+        
+        container.innerHTML = interviews.map(interview => `
+            <div class="interview-card">
+                <div class="interview-header">
+                    <h3>${interview.title}</h3>
+                    <span class="interview-date">${interview.completedAt}</span>
+                </div>
+                <div class="interview-details">
+                    <p><strong>Duration:</strong> ${interview.duration}</p>
+                    <p><strong>Status:</strong> ${interview.status}</p>
+                    <p><strong>Questions:</strong> ${interview.questionsAnswered}</p>
+                </div>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading user interviews:', error);
+        container.innerHTML = '<p style="text-align: center; color: #666; opacity: 0.7;">Error loading interviews.</p>';
+    }
+}
+
+async function loadCandidatesForInterviewer() {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+    if (!currentUser) return;
+    
+    const container = document.getElementById('candidatesList');
+    if (!container) return;
+    
+    try {
+        const q = window.query(
+            window.collection(window.firebaseDb, 'candidateResults'),
+            window.where('interviewerEmail', '==', currentUser.email)
+        );
+        const querySnapshot = await window.getDocs(q);
+        const candidates = [];
+        
+        querySnapshot.forEach((doc) => {
+            candidates.push({ id: doc.id, ...doc.data() });
+        });
+        
+        if (candidates.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: #666; opacity: 0.7;">No candidate evaluations available yet.</p>';
+            return;
+        }
+        
+        container.innerHTML = candidates.map(candidate => `
+            <div class="interview-card">
+                <div class="interview-header">
+                    <h3>${candidate.candidateName} - ${candidate.jobTitle}</h3>
+                    <span class="interview-date">${candidate.completedAt}</span>
+                </div>
+                <div class="interview-details">
+                    <p><strong>Score:</strong> ${candidate.score}%</p>
+                    <p><strong>Duration:</strong> ${candidate.duration}</p>
+                    <p><strong>Status:</strong> <span class="status ${candidate.score >= 80 ? 'passed' : 'pending'}">${candidate.score >= 80 ? 'Recommended' : 'Under Review'}</span></p>
+                </div>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading candidates:', error);
+        container.innerHTML = '<p style="text-align: center; color: #666; opacity: 0.7;">Error loading candidates.</p>';
+    }
+}

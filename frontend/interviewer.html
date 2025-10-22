@@ -24,7 +24,7 @@
         <div class="dashboard-actions">
             <button class="action-btn" onclick="toggleCreateInterview()">Create New Interview</button>
             <button class="action-btn secondary" onclick="toggleCandidates()">View Candidates</button>
-            <button class="action-btn secondary" onclick="toggleProfile()">Update Profile</button>
+            <button class="action-btn secondary" onclick="toggleProfile()">Profile</button>
         </div>
         
         <div id="profileSection" class="profile-section" style="display: none;">
@@ -46,52 +46,31 @@
                     <label>Member Since</label>
                     <input type="text" id="interviewerRegistered" readonly>
                 </div>
+                <div class="form-group">
+                    <label>Role</label>
+                    <input type="text" id="interviewerRole" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Experience (Years)</label>
+                    <input type="number" id="interviewerExperience" readonly>
+                </div>
                 <button class="action-btn" onclick="editProfile()">Edit Profile</button>
             </div>
         </div>
         
         <div id="candidatesSection" class="interviews-section" style="display: none;">
             <h2>Candidate Evaluations</h2>
-            <div class="interviews-list">
-                <div class="interview-card">
-                    <div class="interview-header">
-                        <h3>John Doe - Software Engineer</h3>
-                        <span class="interview-date">Dec 15, 2023</span>
-                    </div>
-                    <div class="interview-details">
-                        <p><strong>Score:</strong> 92%</p>
-                        <p><strong>Duration:</strong> 45 minutes</p>
-                        <p><strong>Status:</strong> <span class="status passed">Recommended</span></p>
-                    </div>
-                </div>
-                
-                <div class="interview-card">
-                    <div class="interview-header">
-                        <h3>Jane Smith - Frontend Developer</h3>
-                        <span class="interview-date">Dec 12, 2023</span>
-                    </div>
-                    <div class="interview-details">
-                        <p><strong>Score:</strong> 78%</p>
-                        <p><strong>Duration:</strong> 38 minutes</p>
-                        <p><strong>Status:</strong> <span class="status pending">Under Review</span></p>
-                    </div>
-                </div>
-                
-                <div class="interview-card">
-                    <div class="interview-header">
-                        <h3>Mike Wilson - Full Stack Developer</h3>
-                        <span class="interview-date">Dec 10, 2023</span>
-                    </div>
-                    <div class="interview-details">
-                        <p><strong>Score:</strong> 85%</p>
-                        <p><strong>Duration:</strong> 52 minutes</p>
-                        <p><strong>Status:</strong> <span class="status passed">Recommended</span></p>
-                    </div>
-                </div>
+            <div class="interviews-list" id="candidatesList">
+                <p style="text-align: center; color: white; opacity: 0.7;">No candidate evaluations available yet.</p>
             </div>
         </div>
         
-        <div id="createInterviewSection" class="profile-section" style="display: none;">
+    </div>
+
+    <!-- Create Interview Popup -->
+    <div id="createInterviewPopup" class="popup" style="display: none;">
+        <div class="popup-content">
+            <span class="close" onclick="closeCreateInterviewPopup()">&times;</span>
             <h2>Create New Interview</h2>
             <form class="profile-form" onsubmit="handleCreateInterview(event)">
                 <div class="form-group">
@@ -153,6 +132,8 @@
             document.getElementById('interviewerName').value = user.name || 'Not provided';
             document.getElementById('interviewerEmail').value = user.email || 'Not provided';
             document.getElementById('interviewerType').value = user.type || 'Interviewer';
+            document.getElementById('interviewerRole').value = user.role || 'Not provided';
+            document.getElementById('interviewerExperience').value = user.experience || '0';
             
             // Format registration date
             if (user.registeredAt) {
@@ -162,6 +143,65 @@
                 document.getElementById('interviewerRegistered').value = 'Not available';
             }
         }
+        
+        function loadCandidatesForInterviewer() {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+            if (!currentUser) return;
+            
+            const candidateResults = JSON.parse(localStorage.getItem('candidateResults') || '[]');
+            const interviewerCandidates = candidateResults.filter(result => result.interviewerEmail === currentUser.email);
+            
+            const candidatesList = document.getElementById('candidatesList');
+            
+            if (interviewerCandidates.length === 0) {
+                candidatesList.innerHTML = '<p style="text-align: center; color: white; opacity: 0.7;">No candidate evaluations available yet.</p>';
+                return;
+            }
+            
+            candidatesList.innerHTML = interviewerCandidates.map(candidate => `
+                <div class="interview-card">
+                    <div class="interview-header">
+                        <h3>${candidate.candidateName} - ${candidate.jobTitle}</h3>
+                        <span class="interview-date">${candidate.completedAt}</span>
+                    </div>
+                    <div class="interview-details">
+                        <p><strong>Score:</strong> ${candidate.score}%</p>
+                        <p><strong>Duration:</strong> ${candidate.duration}</p>
+                        <p><strong>Status:</strong> <span class="status ${candidate.score >= 80 ? 'passed' : 'pending'}">${candidate.score >= 80 ? 'Recommended' : 'Under Review'}</span></p>
+                    </div>
+                </div>
+            `).join('');
+        }
+    </script>
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyBCNrh-JW6k-Xy_Fr4uEgC1av2b0bqT3ug",
+            authDomain: "ai-interview-platform-da101.firebaseapp.com",
+            projectId: "ai-interview-platform-da101",
+            storageBucket: "ai-interview-platform-da101.firebasestorage.app",
+            messagingSenderId: "1000964103881",
+            appId: "1:1000964103881:web:d7b6b9f76c63081eebb718",
+            measurementId: "G-PYTF9RLXV0"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        window.firebaseAuth = auth;
+        window.firebaseDb = db;
+        window.setDoc = setDoc;
+        window.getDoc = getDoc;
+        window.doc = doc;
+        window.collection = collection;
+        window.addDoc = addDoc;
+        window.getDocs = getDocs;
+        window.query = query;
+        window.where = where;
     </script>
     <script src="script.js"></script>
 </body>

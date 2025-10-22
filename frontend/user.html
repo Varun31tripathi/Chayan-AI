@@ -117,6 +117,22 @@
                     <label>Member Since</label>
                     <input type="text" id="profileRegistered" readonly>
                 </div>
+                <div class="form-group">
+                    <label>Current Role</label>
+                    <input type="text" id="profileCurrentRole" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Skills</label>
+                    <input type="text" id="profileSkills" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Projects</label>
+                    <textarea id="profileProjects" readonly rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Experience (Years)</label>
+                    <input type="number" id="profileExperience" readonly>
+                </div>
                 <button class="action-btn" onclick="editProfile()">Edit Profile</button>
             </div>
         </div>
@@ -150,6 +166,10 @@
             document.getElementById('profileName').value = user.name || 'Not provided';
             document.getElementById('profileEmail').value = user.email || 'Not provided';
             document.getElementById('profileType').value = user.type || 'Student';
+            document.getElementById('profileCurrentRole').value = user.currentRole || 'Not provided';
+            document.getElementById('profileSkills').value = user.skills || 'Not provided';
+            document.getElementById('profileProjects').value = user.projects || 'Not provided';
+            document.getElementById('profileExperience').value = user.experience || '0';
             
             // Format registration date
             if (user.registeredAt) {
@@ -159,6 +179,36 @@
                 document.getElementById('profileRegistered').value = 'Not available';
             }
         }
+    </script>
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyBCNrh-JW6k-Xy_Fr4uEgC1av2b0bqT3ug",
+            authDomain: "ai-interview-platform-da101.firebaseapp.com",
+            projectId: "ai-interview-platform-da101",
+            storageBucket: "ai-interview-platform-da101.firebasestorage.app",
+            messagingSenderId: "1000964103881",
+            appId: "1:1000964103881:web:d7b6b9f76c63081eebb718",
+            measurementId: "G-PYTF9RLXV0"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        window.firebaseAuth = auth;
+        window.firebaseDb = db;
+        window.setDoc = setDoc;
+        window.getDoc = getDoc;
+        window.doc = doc;
+        window.collection = collection;
+        window.addDoc = addDoc;
+        window.getDocs = getDocs;
+        window.query = query;
+        window.where = where;
     </script>
     <script src="script.js"></script>
 </body>

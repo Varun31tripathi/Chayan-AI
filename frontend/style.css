@@ -1612,3 +1612,128 @@ input:focus {
     color: #333;
     text-decoration: underline;
 }
+/* Modern Create Interview Popup Styles */
+#createInterviewPopup .popup-content {
+    width: 800px;
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.9));
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+}
+
+#createInterviewPopup .popup-content h2 {
+    color: #333;
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 2rem;
+    text-align: center;
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+#createInterviewPopup .profile-form {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    max-width: none;
+}
+
+#createInterviewPopup .form-group {
+    margin-bottom: 0;
+}
+
+#createInterviewPopup .form-group:nth-last-child(2) {
+    grid-column: 1 / -1;
+}
+
+#createInterviewPopup .form-group label {
+    color: #555;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+#createInterviewPopup .form-group input,
+#createInterviewPopup .form-group select,
+#createInterviewPopup .form-group textarea {
+    background: rgba(255, 255, 255, 0.8);
+    border: 2px solid #e1e8ed;
+    color: #333;
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+#createInterviewPopup .form-group input:focus,
+#createInterviewPopup .form-group select:focus,
+#createInterviewPopup .form-group textarea:focus {
+    border-color: #667eea;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    transform: translateY(-1px);
+}
+
+#createInterviewPopup .form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+#createInterviewPopup .action-btn {
+    grid-column: 1 / -1;
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    border: none;
+    color: white;
+    padding: 16px 32px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+#createInterviewPopup .action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+}
+
+#createInterviewPopup .close {
+    color: #666;
+    font-size: 24px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+#createInterviewPopup .close:hover {
+    color: #333;
+    transform: scale(1.1);
+}
+
+@media (max-width: 768px) {
+    #createInterviewPopup .popup-content {
+        width: 95vw;
+        padding: 1.5rem;
+    }
+    
+    #createInterviewPopup .profile-form {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    #createInterviewPopup .form-group:nth-last-child(2) {
+        grid-column: 1;
+    }
+    
+    #createInterviewPopup .action-btn {
+        grid-column: 1;
+    }
+}
