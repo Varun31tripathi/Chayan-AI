@@ -1,31 +1,42 @@
-# AI Interview Platform
+# ChayanAI🏆 - AI Interview Platform
 
-## Setup Instructions
+## 🚀 Deployment Ready
 
-### Backend Setup
-1. Navigate to backend directory: `cd backend`
-2. Install dependencies: `npm install`
-3. Add your Google Gemini API key to `.env` file:
-   ```
-   GEMINI_API_KEY=your_actual_gemini_api_key_here
-   ```
-4. Start server: `npm run dev`
+### Quick Deploy Options:
 
-### Frontend Setup
-1. Open `frontend/index.html` in browser
-2. Backend must be running on http://localhost:3001
+#### 1. **Vercel** (Recommended)
+```bash
+npm install -g vercel
+vercel --prod
+```
 
-### Features
-- AI-powered interviews using Google Gemini
-- Dynamic question generation based on job requirements
-- Real-time conversation with AI interviewer
-- Timer-based interview sessions
-- Interview creation by interviewers
-- Student dashboard with available interviews
+#### 2. **Netlify**
+```bash
+npm install -g netlify-cli
+netlify deploy --prod --dir=frontend
+```
 
-### Usage
-1. Create interviewer account and add interview details
-2. Students can view available interviews
-3. AI generates questions based on interviewer specifications
-4. Real-time conversation during interview
-5. Automatic submission when time expires# Chayan-AI
+#### 3. **Heroku**
+```bash
+git add .
+git commit -m "Deploy to Heroku"
+heroku create your-app-name
+git push heroku main
+```
+
+### Environment Variables:
+- `GEMINI_API_KEY`: Your Google Gemini API key
+- `PORT`: Server port (default: 3001)
+
+### Local Development:
+```bash
+npm install
+npm run dev
+```
+
+### Features:
+- ✅ AI-powered interviews
+- ✅ Real-time evaluation
+- ✅ Performance analytics
+- ✅ Responsive design
+- ✅ Firebase authentication

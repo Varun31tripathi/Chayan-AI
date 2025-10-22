@@ -1,11 +1,21 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
+require('dotenv').config();
 
 const app = express();
-const port = 3001;
+const port = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
+
+// Serve static files from frontend directory
+app.use(express.static(path.join(__dirname, '../frontend')));
+
+// Serve index.html for root route
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/index.html'));
+});
 
 app.post('/api/start-interview', (req, res) => {
   const sessionId = Date.now().toString();
