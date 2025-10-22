@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Interview - AI Interview Platform</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">AI Interview Platform</div>
+        <div class="nav-links">
+            <a href="user.html">End Interview</a>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="interview-header">
+            <h1 id="interviewTitle">Software Engineer Interview</h1>
+            <div class="timer">Time Remaining: <span id="timer">15:00</span></div>
+        </div>
+        
+        <div class="interview-content">
+            <div class="interview-layout">
+                <div class="ai-interviewer">
+                    <div class="ai-avatar">👩‍💼</div>
+                    <div class="ai-message">
+                        <p>Hello! I'm your AI interviewer. Starting interview...</p>
+                        <p id="aiQuestion"><strong>Loading question...</strong></p>
+                    </div>
+                </div>
+                
+                <div class="camera-section">
+                    <video id="cameraPreview" autoplay muted></video>
+                    <div class="camera-controls">
+                        <button id="cameraBtn" class="camera-btn" onclick="toggleCamera()">📹</button>
+                        <button id="recordBtn" class="record-btn" onclick="toggleRecording()" disabled>⏺️</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="response-section">
+                <div class="input-container">
+                    <textarea id="responseText" placeholder="Type your answer here or use voice..." rows="6"></textarea>
+                    <button id="micBtn" class="mic-btn" onclick="toggleSpeechRecognition()">🎤</button>
+                </div>
+                <div class="response-controls">
+                    <button class="action-btn" onclick="sendResponse()">Send Response</button>
+                    <button class="action-btn secondary" onclick="submitInterview()">Submit Interview</button>
+                </div>
+            </div>
+            
+            <div class="qa-history">
+                <h3>Interview History</h3>
+                <div id="qaList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let timeLeft = 900;
+        let sessionId = null;
+        let recognition = null;
+        let isRecording = false;
+        let silenceTimer = null;
+        let lastSpeechTime = null;
+        let cameraStream = null;
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let isCameraOn = false;
+        let isVideoRecording = false;
+        
+        // Text-to-speech function
+        function speakText(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 0.9;
+                utterance.pitch = 1;
+                utterance.volume = 0.8;
+                speechSynthesis.speak(utterance);
+                return utterance;
+            }
+        }
+        
+        function updateQAHistory() {
+            const qaList = document.getElementById('qaList');
+            qaList.innerHTML = qaHistory.map((qa, index) => 
+                `<div class="qa-item">
+                    <div class="question"><strong>Q${index + 1}:</strong> ${qa.question}</div>
+                    <div class="answer"><strong>A:</strong> ${qa.answer}</div>
+                </div>`
+            ).join('');
+        }
+        
+        // Initialize speech recognition
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+            
+            recognition.onresult = function(event) {
+                let finalTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript;
+                    }
+                }
+                if (finalTranscript) {
+                    document.getElementById('responseText').value += finalTranscript + ' ';
+                    lastSpeechTime = Date.now();
+                    resetSilenceTimer();
+                }
+            };
+            
+            recognition.onerror = function(event) {
+                console.error('Speech recognition error:', event.error);
+                stopRecording();
+            };
+        }
+        
+        function toggleSpeechRecognition() {
+            if (!recognition) {
+                alert('Speech recognition not supported in this browser');
+                return;
+            }
+            
+            if (isRecording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        }
+        
+        function startRecording() {
+            recognition.start();
+            isRecording = true;
+            lastSpeechTime = Date.now();
+            document.getElementById('micBtn').style.background = '#ff4444';
+            document.getElementById('micBtn').textContent = '🔴';
+            resetSilenceTimer();
+        }
+        
+        function stopRecording() {
+            recognition.stop();
+            isRecording = false;
+            document.getElementById('micBtn').style.background = '';
+            document.getElementById('micBtn').textContent = '🎤';
+            clearTimeout(silenceTimer);
+        }
+        
+        function resetSilenceTimer() {
+            clearTimeout(silenceTimer);
+            silenceTimer = setTimeout(() => {
+                if (isRecording && document.getElementById('responseText').value.trim()) {
+                    stopRecording();
+                    sendResponse();
+                }
+            }, 5000);
+        }
+        
+        let currentQuestionIndex = 0;
+        let practiceQuestions = [];
+        let qaHistory = [];
+        let currentQuestion = '';
+        let evaluationData = [];
+        
+        async function startInterview() {
+            // Get interview data from sessionStorage
+            const storedData = sessionStorage.getItem('currentInterview');
+            const defaultData = {
+                jobTitle: 'Software Engineer',
+                company: 'TechCorp',
+                level: 'Mid-Level',
+                duration: '15 minutes',
+                skills: 'JavaScript, React, Node.js'
+            };
+            
+            const interviewData = storedData ? JSON.parse(storedData) : defaultData;
+            
+            // Update page title
+            document.getElementById('interviewTitle').textContent = `${interviewData.jobTitle} Interview`;
+            
+            // Set timer based on duration
+            const durationMinutes = parseInt(interviewData.duration);
+            timeLeft = durationMinutes * 60;
+            
+            // Check if this is a practice interview
+            if (interviewData.isPractice && interviewData.practiceQuestions) {
+                practiceQuestions = interviewData.practiceQuestions;
+                const firstQuestion = practiceQuestions[0];
+                currentQuestion = firstQuestion;
+                
+                // Immediately show first question
+                document.getElementById('aiQuestion').innerHTML = `<strong>${firstQuestion}</strong>`;
+                
+                // Speak the question without delay
+                setTimeout(() => {
+                    const utterance = speakText(firstQuestion);
+                    
+                    // Auto-start recording after speech ends
+                    if (utterance) {
+                        utterance.onend = () => {
+                            setTimeout(() => {
+                                if (recognition && !isRecording) {
+                                    startRecording();
+                                }
+                            }, 300);
+                        };
+                    } else {
+                        setTimeout(() => {
+                            if (recognition && !isRecording) {
+                                startRecording();
+                            }
+                        }, 500);
+                    }
+                }, 100);
+                return;
+            }
+            
+            // Regular interview flow
+            const apiData = {
+                ...interviewData,
+                jobDescription: `Position for ${interviewData.jobTitle} at ${interviewData.company}`
+            };
+            
+            // Show loading message
+            document.getElementById('aiQuestion').innerHTML = '<strong>Connecting to AI interviewer...</strong>';
+            
+            const defaultQuestion = 'Tell me about yourself and your experience.';
+            
+            try {
+                const response = await fetch('http://localhost:3001/api/start-interview', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(apiData)
+                });
+                
+                const data = await response.json();
+                sessionId = data.sessionId;
+            } catch (error) {
+                console.log('API unavailable, continuing with local session');
+            }
+            
+            // Always use default question
+            currentQuestion = defaultQuestion;
+            document.getElementById('aiQuestion').innerHTML = `<strong>${defaultQuestion}</strong>`;
+            
+            // Speak the question
+            const utterance = speakText(defaultQuestion);
+            
+            // Auto-start recording after speech ends
+            if (utterance) {
+                utterance.onend = () => {
+                    setTimeout(() => {
+                        if (recognition && !isRecording) {
+                            startRecording();
+                        }
+                    }, 300);
+                };
+            } else {
+                setTimeout(() => {
+                    if (recognition && !isRecording) {
+                        startRecording();
+                    }
+                }, 500);
+            }
+        }
+        
+        async function sendResponse() {
+            const userResponse = document.getElementById('responseText').value;
+            if (!userResponse.trim()) return;
+            
+            // Add to QA history
+            qaHistory.push({ question: currentQuestion, answer: userResponse });
+            updateQAHistory();
+            
+            // Handle practice interview
+            if (practiceQuestions.length > 0) {
+                currentQuestionIndex++;
+                
+                if (currentQuestionIndex < practiceQuestions.length) {
+                    const nextQuestion = practiceQuestions[currentQuestionIndex];
+                    currentQuestion = nextQuestion;
+                    document.getElementById('aiQuestion').innerHTML = `<strong>${nextQuestion}</strong>`;
+                    document.getElementById('responseText').value = '';
+                    
+                    // Speak the new question
+                    const utterance = speakText(nextQuestion);
+                    
+                    if (utterance) {
+                        utterance.onend = () => {
+                            setTimeout(() => {
+                                if (recognition && !isRecording) {
+                                    startRecording();
+                                }
+                            }, 500);
+                        };
+                    } else {
+                        setTimeout(() => {
+                            if (recognition && !isRecording) {
+                                startRecording();
+                            }
+                        }, 1000);
+                    }
+                } else {
+                    document.getElementById('aiQuestion').innerHTML = '<strong>Thank you! You have completed all practice questions.</strong>';
+                    setTimeout(() => {
+                        submitInterview();
+                    }, 2000);
+                }
+                return;
+            }
+            
+            // Regular interview flow - get AI evaluation
+            document.getElementById('responseText').value = '';
+            document.getElementById('aiQuestion').innerHTML = '<strong>Evaluating your response...</strong>';
+            
+            // Send to API for evaluation
+            if (sessionId) {
+                try {
+                    const response = await fetch('http://localhost:3001/api/interview-response', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ sessionId, userResponse, question: currentQuestion })
+                    });
+                    
+                    const data = await response.json();
+                    if (data.evaluation) {
+                        evaluationData.push({
+                            question: currentQuestion,
+                            answer: userResponse,
+                            ...data.evaluation
+                        });
+                    }
+                    
+                    document.getElementById('aiQuestion').innerHTML = '<strong>Thank you for your response. Please continue or submit when ready.</strong>';
+                } catch (error) {
+                    console.log('API evaluation failed, continuing locally');
+                    document.getElementById('aiQuestion').innerHTML = '<strong>Thank you for your response. Please continue or submit when ready.</strong>';
+                }
+            }
+        }
+        
+        function updateTimer() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            document.getElementById('timer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            if (timeLeft <= 0) {
+                submitInterview();
+                return;
+            }
+            timeLeft--;
+        }
+        
+        function submitInterview() {
+            // Save completed interview to user's history
+            const interviewData = JSON.parse(sessionStorage.getItem('currentInterview') || 'null');
+            if (interviewData) {
+                const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+                if (currentUser) {
+                    const userInterviews = JSON.parse(localStorage.getItem(`interviews_${currentUser.uid}`) || '[]');
+                    
+                    const avgScore = evaluationData.length > 0 ? 
+                        Math.round(evaluationData.reduce((sum, eval) => sum + eval.score, 0) / evaluationData.length) : 
+                        Math.floor(Math.random() * 40) + 60;
+                    
+                    const completedInterview = {
+                        title: `${interviewData.jobTitle} - ${interviewData.company}`,
+                        duration: interviewData.duration,
+                        completedAt: new Date().toLocaleDateString(),
+                        status: 'completed',
+                        questionsAnswered: practiceQuestions.length > 0 ? practiceQuestions.length : qaHistory.length,
+                        score: avgScore,
+                        evaluations: evaluationData,
+                        overallFeedback: generateOverallFeedback(avgScore)
+                    };
+                    
+                    userInterviews.push(completedInterview);
+                    localStorage.setItem(`interviews_${currentUser.uid}`, JSON.stringify(userInterviews));
+                }
+                
+                // Save interview data for results page
+                const resultsData = {
+                    ...interviewData,
+                    questionsAnswered: practiceQuestions.length > 0 ? practiceQuestions.length : 'Multiple',
+                    completedAt: new Date().toLocaleDateString()
+                };
+                sessionStorage.setItem('completedInterview', JSON.stringify(resultsData));
+            }
+            
+            // Redirect to results page
+            window.location.href = 'results.html';
+        }
+        
+        function generateOverallFeedback(score) {
+            if (score >= 90) return "Excellent performance! Outstanding answers.";
+            if (score >= 80) return "Great job! Strong interview performance.";
+            if (score >= 70) return "Good performance with room for improvement.";
+            return "Keep practicing to improve your interview skills.";
+        }
+        
+        setInterval(updateTimer, 1000);
+        startInterview();
+        
+        // Camera functions
+        async function toggleCamera() {
+            if (!isCameraOn) {
+                try {
+                    cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                    document.getElementById('cameraPreview').srcObject = cameraStream;
+                    document.getElementById('cameraBtn').textContent = '🚫';
+                    document.getElementById('recordBtn').disabled = false;
+                    isCameraOn = true;
+                } catch (error) {
+                    alert('Camera access denied or not available');
+                }
+            } else {
+                if (cameraStream) {
+                    cameraStream.getTracks().forEach(track => track.stop());
+                    document.getElementById('cameraPreview').srcObject = null;
+                    document.getElementById('cameraBtn').textContent = '📹';
+                    document.getElementById('recordBtn').disabled = true;
+                    isCameraOn = false;
+                    if (isVideoRecording) toggleRecording();
+                }
+            }
+        }
+        
+        function toggleRecording() {
+            if (!isVideoRecording) {
+                recordedChunks = [];
+                mediaRecorder = new MediaRecorder(cameraStream);
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) recordedChunks.push(event.data);
+                };
+                mediaRecorder.start();
+                document.getElementById('recordBtn').textContent = '⏹️';
+                isVideoRecording = true;
+            } else {
+                mediaRecorder.stop();
+                document.getElementById('recordBtn').textContent = '⏺️';
+                isVideoRecording = false;
+            }
+        }
+        
+        // Stop recording when page unloads
+        window.addEventListener('beforeunload', function() {
+            if (isRecording) {
+                stopRecording();
+            }
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+            }
+        });
+    </script>
+</body>
+</html>

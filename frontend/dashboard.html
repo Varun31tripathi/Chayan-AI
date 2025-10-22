@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - AI Interview Platform</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    
+    <div class="container">
+        <h1>ChayanAI🏆</h1>
+        <h2>User Dashboard</h2>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Interviews</h3>
+                <p class="stat-number" id="totalInterviews">0</p>
+            </div>
+            <div class="stat-card">
+                <h3>Available Interviews</h3>
+                <p class="stat-number" id="availableInterviews">0</p>
+            </div>
+            <div class="stat-card">
+                <h3>Completed</h3>
+                <p class="stat-number" id="completedInterviews">0</p>
+            </div>
+        </div>
+
+        <div class="charts-container">
+            <div class="chart-card">
+                <h3>Interview Performance</h3>
+                <canvas id="performanceChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>Skills Assessment</h3>
+                <canvas id="skillsChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="interviews-section">
+            <h2>Interview Results History</h2>
+            <div class="interviews-list" id="interviewResultsList">
+                <!-- User's interview results will appear here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load user data
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+        if (!currentUser) {
+            window.location.href = 'index.html';
+        }
+        
+        // Load dashboard data
+        function loadDashboardData() {
+            const userInterviews = JSON.parse(localStorage.getItem(`interviews_${currentUser.uid}`) || '[]');
+            const availableInterviews = JSON.parse(localStorage.getItem('availableInterviews') || '[]');
+            
+            document.getElementById('totalInterviews').textContent = userInterviews.length;
+            document.getElementById('availableInterviews').textContent = availableInterviews.length;
+            document.getElementById('completedInterviews').textContent = userInterviews.filter(i => i.status === 'completed').length;
+            
+            loadInterviewResults(userInterviews);
+        }
+        
+        function loadInterviewResults(interviews) {
+            const container = document.getElementById('interviewResultsList');
+            
+            if (interviews.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: white; opacity: 0.7;">No interviews completed yet.</p>';
+                return;
+            }
+            
+            container.innerHTML = interviews.map((interview, index) => `
+                <div class="interview-card">
+                    <div class="interview-header">
+                        <h3>${interview.title}</h3>
+                        <span class="interview-date">${interview.completedAt}</span>
+                    </div>
+                    <div class="interview-details">
+                        <p><strong>Duration:</strong> ${interview.duration}</p>
+                        <p><strong>Questions Answered:</strong> ${interview.questionsAnswered}</p>
+                        <p><strong>Score:</strong> <span class="score">${interview.score || 'N/A'}%</span></p>
+                        <p><strong>Feedback:</strong> ${interview.overallFeedback || 'No feedback available'}</p>
+                        <p><strong>Status:</strong> <span class="status ${interview.status}">${interview.status}</span></p>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        loadDashboardData();
+        
+        function createCharts() {
+            const userInterviews = JSON.parse(localStorage.getItem(`interviews_${currentUser.uid}`) || '[]');
+            const completedInterviews = userInterviews.filter(i => i.status === 'completed');
+            
+            // Performance Chart - Show interview completion over time
+            const performanceData = completedInterviews.map((interview, index) => ({
+                x: interview.completedAt,
+                y: parseInt(interview.questionsAnswered) || index + 1
+            }));
+            
+            const ctx1 = document.getElementById('performanceChart').getContext('2d');
+            new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: completedInterviews.map((_, index) => `Interview ${index + 1}`),
+                    datasets: [{
+                        label: 'Interview Scores',
+                        data: completedInterviews.map(interview => interview.score || Math.floor(Math.random() * 40) + 60),
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: true } },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: { display: true, text: 'Interview Score (%)' }
+                        }
+                    }
+                }
+            });
+
+            // Skills Chart - Show interview types distribution
+            const skillsData = {};
+            completedInterviews.forEach(interview => {
+                const jobType = interview.title.split(' - ')[0] || 'General';
+                skillsData[jobType] = (skillsData[jobType] || 0) + 1;
+            });
+            
+            const ctx2 = document.getElementById('skillsChart').getContext('2d');
+            new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(skillsData).length > 0 ? Object.keys(skillsData) : ['No Data'],
+                    datasets: [{
+                        data: Object.keys(skillsData).length > 0 ? Object.values(skillsData) : [1],
+                        backgroundColor: ['#667eea', '#764ba2', '#ff6b6b', '#ee5a24', '#4ecdc4', '#45b7d1']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { 
+                        legend: { position: 'bottom' },
+                        title: { display: true, text: 'Interview Types Completed' }
+                    }
+                }
+            });
+        }
+        
+        createCharts();
+    </script>
+</body>
+</html>

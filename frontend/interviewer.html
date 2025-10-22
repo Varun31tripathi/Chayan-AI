@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interviewer Dashboard - AI Interview Platform</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">AI Interview Platform</div>
+        <div class="nav-links">
+            <a href="#">Dashboard</a>
+            <a href="#" onclick="toggleCandidates()">Candidates</a>
+            <a href="#" onclick="toggleProfile()">Profile</a>
+            <a href="#" onclick="logout()">Logout</a>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <h1 id="interviewerWelcome">Welcome Back, Interviewer!</h1>
+        <p class="welcome-text">Manage interviews and evaluate candidates</p>
+        
+        <div class="dashboard-actions">
+            <button class="action-btn" onclick="toggleCreateInterview()">Create New Interview</button>
+            <button class="action-btn secondary" onclick="toggleCandidates()">View Candidates</button>
+            <button class="action-btn secondary" onclick="toggleProfile()">Update Profile</button>
+        </div>
+        
+        <div id="profileSection" class="profile-section" style="display: none;">
+            <h2>Interviewer Profile</h2>
+            <div class="profile-form">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="interviewerName" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="interviewerEmail" readonly>
+                </div>
+                <div class="form-group">
+                    <label>User Type</label>
+                    <input type="text" id="interviewerType" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Member Since</label>
+                    <input type="text" id="interviewerRegistered" readonly>
+                </div>
+                <button class="action-btn" onclick="editProfile()">Edit Profile</button>
+            </div>
+        </div>
+        
+        <div id="candidatesSection" class="interviews-section" style="display: none;">
+            <h2>Candidate Evaluations</h2>
+            <div class="interviews-list">
+                <div class="interview-card">
+                    <div class="interview-header">
+                        <h3>John Doe - Software Engineer</h3>
+                        <span class="interview-date">Dec 15, 2023</span>
+                    </div>
+                    <div class="interview-details">
+                        <p><strong>Score:</strong> 92%</p>
+                        <p><strong>Duration:</strong> 45 minutes</p>
+                        <p><strong>Status:</strong> <span class="status passed">Recommended</span></p>
+                    </div>
+                </div>
+                
+                <div class="interview-card">
+                    <div class="interview-header">
+                        <h3>Jane Smith - Frontend Developer</h3>
+                        <span class="interview-date">Dec 12, 2023</span>
+                    </div>
+                    <div class="interview-details">
+                        <p><strong>Score:</strong> 78%</p>
+                        <p><strong>Duration:</strong> 38 minutes</p>
+                        <p><strong>Status:</strong> <span class="status pending">Under Review</span></p>
+                    </div>
+                </div>
+                
+                <div class="interview-card">
+                    <div class="interview-header">
+                        <h3>Mike Wilson - Full Stack Developer</h3>
+                        <span class="interview-date">Dec 10, 2023</span>
+                    </div>
+                    <div class="interview-details">
+                        <p><strong>Score:</strong> 85%</p>
+                        <p><strong>Duration:</strong> 52 minutes</p>
+                        <p><strong>Status:</strong> <span class="status passed">Recommended</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="createInterviewSection" class="profile-section" style="display: none;">
+            <h2>Create New Interview</h2>
+            <form class="profile-form" onsubmit="handleCreateInterview(event)">
+                <div class="form-group">
+                    <label>Job Title</label>
+                    <input type="text" placeholder="e.g., Software Engineer" required>
+                </div>
+                <div class="form-group">
+                    <label>Company</label>
+                    <input type="text" placeholder="Company Name" required>
+                </div>
+                <div class="form-group">
+                    <label>Experience Level</label>
+                    <select required>
+                        <option value="">Select Level</option>
+                        <option>Junior</option>
+                        <option>Mid-Level</option>
+                        <option>Senior</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Interview Duration</label>
+                    <select required>
+                        <option value="">Select Duration</option>
+                        <option>5 minutes</option>
+                        <option>10 minutes</option>
+                        <option>15 minutes</option>
+                        <option>20 minutes</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Skills Required</label>
+                    <input type="text" placeholder="JavaScript, React, Node.js" required>
+                </div>
+                <div class="form-group">
+                    <label>Job Description</label>
+                    <textarea placeholder="Enter job description and requirements..." rows="4" required></textarea>
+                </div>
+                <button type="submit" class="action-btn">Create Interview</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Check if user is logged in as interviewer and load data
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+        if (!currentUser || currentUser.type !== 'interviewer') {
+            alert('Please login as interviewer first!');
+            window.location.href = 'index.html';
+        } else {
+            // Load interviewer data
+            loadInterviewerData(currentUser);
+        }
+        
+        function loadInterviewerData(user) {
+            // Update welcome message
+            document.getElementById('interviewerWelcome').textContent = `Welcome Back, ${user.name}!`;
+            
+            // Update profile fields
+            document.getElementById('interviewerName').value = user.name || 'Not provided';
+            document.getElementById('interviewerEmail').value = user.email || 'Not provided';
+            document.getElementById('interviewerType').value = user.type || 'Interviewer';
+            
+            // Format registration date
+            if (user.registeredAt) {
+                const date = new Date(user.registeredAt);
+                document.getElementById('interviewerRegistered').value = date.toLocaleDateString();
+            } else {
+                document.getElementById('interviewerRegistered').value = 'Not available';
+            }
+        }
+    </script>
+    <script src="script.js"></script>
+</body>
+</html>

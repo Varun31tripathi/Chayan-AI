@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard | ChayanAI🏆</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-layout">
+        <div class="sidebar">
+            <div class="logo">ChayanAI🏆</div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item">📊 Dashboard</a>
+                <a href="#" onclick="toggleOngoingInterviews()" class="nav-item">📋 Available Interviews</a>
+                <a href="#" onclick="togglePracticeInterviews()" class="nav-item">🎯 Practice Interviews</a>
+                <a href="#" onclick="toggleInterviews()" class="nav-item">📚 My Interviews</a>
+                <a href="#" onclick="toggleProfile()" class="nav-item">👤 Profile</a>
+                <a href="index.html" class="nav-item logout">🚪 Logout</a>
+            </nav>
+        </div>
+        
+        <div class="main-content">
+            <div class="content-header">
+                <h1 id="welcomeMessage">Welcome Back, User!</h1>
+                <p class="welcome-text">Ready to start your AI-powered interview experience?</p>
+            </div>
+            
+            <div class="dashboard-actions">
+                <button class="action-btn" onclick="toggleOngoingInterviews()">Available Interviews</button>
+                <button class="action-btn" onclick="togglePracticeInterviews()">Practice Interviews</button>
+                <button class="action-btn secondary" onclick="toggleInterviews()">View Past Interviews</button>
+                <button class="action-btn secondary" onclick="toggleProfile()">Update Profile</button>
+            </div>
+        
+        <div id="ongoingInterviewsSection" class="interviews-section" style="display: none;">
+            <h2>Available Interviews</h2>
+            <div class="interviews-list" id="availableInterviewsList">
+                <!-- Interviews created by interviewers will appear here -->
+            </div>
+        </div>
+        
+        <div id="practiceInterviewsSection" class="interviews-section" style="display: none;">
+            <h2>Practice Interviews</h2>
+            <p style="color: white; opacity: 0.8; text-align: center; margin-bottom: 2rem;">Practice with these demo interviews to improve your skills</p>
+            <div class="interviews-list">
+                <div class="interview-card">
+                    <div class="interview-header">
+                        <h3>Software Engineer - Practice</h3>
+                        <span class="interview-date">Demo Interview</span>
+                    </div>
+                    <div class="interview-details">
+                        <p><strong>Duration:</strong> 10 minutes</p>
+                        <p><strong>Level:</strong> Beginner</p>
+                        <p><strong>Skills:</strong> Programming Basics, Problem Solving</p>
+                        <button class="action-btn" style="margin-top: 10px;" onclick="startPracticeInterview('Software Engineer', 'Practice Company', 'Beginner', '10 minutes', 'Programming Basics')">Start Practice</button>
+                    </div>
+                </div>
+                
+                <div class="interview-card">
+                    <div class="interview-header">
+                        <h3>Frontend Developer - Practice</h3>
+                        <span class="interview-date">Demo Interview</span>
+                    </div>
+                    <div class="interview-details">
+                        <p><strong>Duration:</strong> 15 minutes</p>
+                        <p><strong>Level:</strong> Intermediate</p>
+                        <p><strong>Skills:</strong> HTML, CSS, JavaScript, React</p>
+                        <button class="action-btn" style="margin-top: 10px;" onclick="startPracticeInterview('Frontend Developer', 'Practice Company', 'Intermediate', '15 minutes', 'HTML, CSS, JavaScript, React')">Start Practice</button>
+                    </div>
+                </div>
+                
+                <div class="interview-card">
+                    <div class="interview-header">
+                        <h3>Data Scientist - Practice</h3>
+                        <span class="interview-date">Demo Interview</span>
+                    </div>
+                    <div class="interview-details">
+                        <p><strong>Duration:</strong> 20 minutes</p>
+                        <p><strong>Level:</strong> Advanced</p>
+                        <p><strong>Skills:</strong> Python, Machine Learning, Statistics</p>
+                        <button class="action-btn" style="margin-top: 10px;" onclick="startPracticeInterview('Data Scientist', 'Practice Company', 'Advanced', '20 minutes', 'Python, Machine Learning, Statistics')">Start Practice</button>
+                    </div>
+                </div>
+                
+                <div class="interview-card">
+                    <div class="interview-header">
+                        <h3>Product Manager - Practice</h3>
+                        <span class="interview-date">Demo Interview</span>
+                    </div>
+                    <div class="interview-details">
+                        <p><strong>Duration:</strong> 15 minutes</p>
+                        <p><strong>Level:</strong> Intermediate</p>
+                        <p><strong>Skills:</strong> Strategy, Communication, Leadership</p>
+                        <button class="action-btn" style="margin-top: 10px;" onclick="startPracticeInterview('Product Manager', 'Practice Company', 'Intermediate', '15 minutes', 'Strategy, Communication, Leadership')">Start Practice</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="profileSection" class="profile-section" style="display: none;">
+            <h2>User Profile</h2>
+            <div class="profile-form">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="profileName" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="profileEmail" readonly>
+                </div>
+                <div class="form-group">
+                    <label>User Type</label>
+                    <input type="text" id="profileType" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Member Since</label>
+                    <input type="text" id="profileRegistered" readonly>
+                </div>
+                <button class="action-btn" onclick="editProfile()">Edit Profile</button>
+            </div>
+        </div>
+        
+        <div id="interviewsSection" class="interviews-section" style="display: none;">
+            <h2>My Interview History</h2>
+            <div class="interviews-list" id="pastInterviewsList">
+                <!-- User's completed interviews will appear here -->
+            </div>
+
+        </div>
+    </div>
+</div>
+
+    <script>
+        // Check if user is logged in and load user data
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+        if (!currentUser) {
+            alert('Please login first!');
+            window.location.href = 'index.html';
+        } else {
+            // Load user data into the page
+            loadUserData(currentUser);
+        }
+        
+        function loadUserData(user) {
+            // Update welcome message
+            document.getElementById('welcomeMessage').textContent = `Welcome Back, ${user.name}!`;
+            
+            // Update profile fields
+            document.getElementById('profileName').value = user.name || 'Not provided';
+            document.getElementById('profileEmail').value = user.email || 'Not provided';
+            document.getElementById('profileType').value = user.type || 'Student';
+            
+            // Format registration date
+            if (user.registeredAt) {
+                const date = new Date(user.registeredAt);
+                document.getElementById('profileRegistered').value = date.toLocaleDateString();
+            } else {
+                document.getElementById('profileRegistered').value = 'Not available';
+            }
+        }
+    </script>
+    <script src="script.js"></script>
+</body>
+</html>

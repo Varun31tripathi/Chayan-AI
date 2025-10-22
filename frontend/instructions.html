@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interview Instructions - AI Interview Platform</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">AI Interview Platform</div>
+        <div class="nav-links">
+            <a href="user.html">Back to Dashboard</a>
+            <a href="index.html">Logout</a>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <h1>Interview Instructions</h1>
+        <p class="welcome-text">Please read these instructions carefully before starting your interview</p>
+        
+        <div class="interview-details-section">
+            <h2>Interview Details</h2>
+            <div class="details-grid">
+                <div class="detail-item">
+                    <strong>Position:</strong> <span id="jobTitle">Software Engineer</span>
+                </div>
+                <div class="detail-item">
+                    <strong>Company:</strong> <span id="company">TechCorp Inc.</span>
+                </div>
+                <div class="detail-item">
+                    <strong>Duration:</strong> <span id="duration">15 minutes</span>
+                </div>
+                <div class="detail-item">
+                    <strong>Experience Level:</strong> <span id="level">Mid-Level</span>
+                </div>
+                <div class="detail-item">
+                    <strong>Required Skills:</strong> <span id="skills">JavaScript, React, Node.js</span>
+                </div>
+                <div class="detail-item full-width">
+                    <strong>Job Description:</strong><br>
+                    <span id="jobDescription">We are looking for a skilled professional to join our development team.</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="instructions-content">
+            <h2>General Instructions:</h2>
+            <div class="instruction-card">
+                <h3>📋 Before You Start</h3>
+                <ul>
+                    <li>Ensure you have a stable internet connection</li>
+                    <li>Find a quiet, well-lit environment</li>
+                    <li>Close all unnecessary applications</li>
+                    <li>Have your resume ready for reference</li>
+                </ul>
+            </div>
+            
+            <div class="instruction-card">
+                <h3>🎤 During the Interview</h3>
+                <ul>
+                    <li>Speak clearly and at a moderate pace</li>
+                    <li>Look directly at the camera when speaking</li>
+                    <li>Take your time to think before answering</li>
+                    <li>Be honest and authentic in your responses</li>
+                </ul>
+            </div>
+            
+            <div class="instruction-card">
+                <h3>⏰ Time Management</h3>
+                <ul>
+                    <li>Interview duration is limited (5-20 minutes)</li>
+                    <li>Timer will be visible during the interview</li>
+                    <li>Answer concisely but completely</li>
+                    <li>You cannot pause or restart the interview</li>
+                </ul>
+            </div>
+            
+            <div class="instruction-card">
+                <h3>🤖 AI Interviewer</h3>
+                <ul>
+                    <li>Questions are generated based on the job role</li>
+                    <li>Follow-up questions may be asked</li>
+                    <li>AI will evaluate your responses in real-time</li>
+                    <li>Results will be available after completion</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="action-buttons">
+            <button class="action-btn secondary" onclick="window.history.back()">Go Back</button>
+            <button class="action-btn" onclick="window.location.href='interview.html'">Start AI Interview</button>
+        </div>
+    </div>
+
+    <script>
+        // Job descriptions for different roles
+        const jobDescriptions = {
+            'Software Engineer': 'We are looking for a skilled Software Engineer to join our development team. You will be responsible for designing, developing, and maintaining software applications using modern programming languages and frameworks.',
+            'Frontend Developer': 'We are seeking a Frontend Developer to create engaging user interfaces and experiences. You will work with HTML, CSS, JavaScript, and modern frameworks like React to build responsive web applications.',
+            'Data Scientist': 'We are hiring a Data Scientist to analyze complex datasets and build machine learning models. You will use Python, statistical methods, and data visualization tools to derive insights from data.',
+            'Product Manager': 'We are looking for a Product Manager to drive product strategy and roadmap. You will work with cross-functional teams to define requirements, prioritize features, and ensure successful product launches.'
+        };
+        
+        // Load interview details from URL parameters or session storage
+        const urlParams = new URLSearchParams(window.location.search);
+        const storedInterview = JSON.parse(sessionStorage.getItem('currentInterview') || 'null');
+        
+        let interviewData = null;
+        
+        if (urlParams.has('jobTitle')) {
+            // From URL parameters (regular interviews)
+            interviewData = {
+                jobTitle: urlParams.get('jobTitle'),
+                company: urlParams.get('company'),
+                duration: urlParams.get('duration'),
+                level: urlParams.get('level'),
+                skills: urlParams.get('skills')
+            };
+        } else if (storedInterview) {
+            // From session storage (practice interviews)
+            interviewData = storedInterview;
+        }
+        
+        if (interviewData) {
+            // Update page content
+            document.getElementById('jobTitle').textContent = interviewData.jobTitle;
+            document.getElementById('company').textContent = interviewData.company;
+            document.getElementById('duration').textContent = interviewData.duration;
+            document.getElementById('level').textContent = interviewData.level;
+            document.getElementById('skills').textContent = interviewData.skills;
+            
+            // Set appropriate job description
+            const description = jobDescriptions[interviewData.jobTitle] || 'We are looking for a qualified candidate to join our team.';
+            document.getElementById('jobDescription').textContent = description;
+            
+            // Update page title
+            document.title = `${interviewData.jobTitle} Interview Instructions - AI Interview Platform`;
+            
+            // Store complete interview data for interview page
+            sessionStorage.setItem('currentInterview', JSON.stringify(interviewData));
+        }
+    </script>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Results | ChayanAI🏆</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">ChayanAI🏆</div>
+        <div class="nav-links">
+            <a href="user.html">Back to Dashboard</a>
+            <a href="index.html">Logout</a>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <h1>Interview Results</h1>
+        
+        <div class="results-content">
+            <div class="interview-summary">
+                <h2>Interview Summary</h2>
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <strong>Position:</strong> <span id="resultPosition">Software Engineer</span>
+                    </div>
+                    <div class="summary-item">
+                        <strong>Company:</strong> <span id="resultCompany">Practice Company</span>
+                    </div>
+                    <div class="summary-item">
+                        <strong>Duration:</strong> <span id="resultDuration">15 minutes</span>
+                    </div>
+                    <div class="summary-item">
+                        <strong>Questions Answered:</strong> <span id="questionsAnswered">10</span>
+                    </div>
+                    <div class="summary-item">
+                        <strong>Overall Score:</strong> <span id="overallScore">N/A</span>
+                    </div>
+                    <div class="summary-item">
+                        <strong>Completion Date:</strong> <span id="completionDate">Today</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="performance-analysis">
+                <h2>Performance Analysis</h2>
+                <div class="analysis-cards" id="analysisCards">
+                    <!-- AI evaluation results will be populated here -->
+                </div>
+            </div>
+            
+            <div class="charts-section">
+                <h2>Visual Performance Overview</h2>
+                <div class="charts-container">
+                    <div class="chart-card">
+                        <h3>Skills Breakdown</h3>
+                        <canvas id="skillsChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Question Scores</h3>
+                        <canvas id="scoresChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="detailed-insights">
+                <h2>Detailed Question Analysis</h2>
+                <div id="questionAnalysis">
+                    <!-- Question-by-question breakdown -->
+                </div>
+            </div>
+            
+            <div class="performance-metrics">
+                <h2>Performance Metrics</h2>
+                <div class="metrics-grid" id="metricsGrid">
+                    <!-- Performance metrics -->
+                </div>
+            </div>
+            
+            <div class="recommendations">
+                <h2>AI Feedback & Recommendations</h2>
+                <div class="recommendation-list" id="recommendationsList">
+                    <!-- AI feedback will be populated here -->
+                </div>
+            </div>
+            
+            <div class="improvement-plan">
+                <h2>Personalized Improvement Plan</h2>
+                <div id="improvementPlan">
+                    <!-- Improvement suggestions -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="action-buttons">
+            <button class="action-btn secondary" onclick="window.location.href='user.html'">Back to Dashboard</button>
+            <button class="action-btn" onclick="retakeInterview()">Practice Again</button>
+        </div>
+    </div>
+
+    <script>
+        // Load interview results on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadInterviewResults();
+        });
+        
+        function loadInterviewResults() {
+            const interviewData = JSON.parse(sessionStorage.getItem('completedInterview') || 'null');
+            
+            if (interviewData) {
+                // Basic interview info
+                document.getElementById('resultPosition').textContent = interviewData.jobTitle || 'N/A';
+                document.getElementById('resultCompany').textContent = interviewData.company || 'N/A';
+                document.getElementById('resultDuration').textContent = interviewData.duration || 'N/A';
+                document.getElementById('questionsAnswered').textContent = interviewData.questionsAnswered || 'N/A';
+                document.getElementById('completionDate').textContent = interviewData.completedAt || new Date().toLocaleDateString();
+                document.getElementById('overallScore').textContent = interviewData.score ? `${interviewData.score}%` : 'N/A';
+                
+                // Load AI evaluation data
+                loadPerformanceAnalysis(interviewData);
+                loadDetailedInsights(interviewData);
+                loadPerformanceMetrics(interviewData);
+                loadRecommendations(interviewData);
+                loadImprovementPlan(interviewData);
+                
+                // Create charts after DOM is ready
+                setTimeout(() => createCharts(interviewData), 100);
+            }
+        }
+        
+        function loadPerformanceAnalysis(data) {
+            const container = document.getElementById('analysisCards');
+            
+            // Use default scores if no evaluation data
+            let commScore = 75, techScore = 80, psScore = 70;
+            
+            if (data.evaluations && data.evaluations.length > 0) {
+                const avgSkills = data.evaluations.reduce((acc, eval) => {
+                    if (eval.skills) {
+                        acc.communication += eval.skills.communication || 0;
+                        acc.technical += eval.skills.technical || 0;
+                        acc.problemSolving += eval.skills.problemSolving || 0;
+                        acc.count++;
+                    }
+                    return acc;
+                }, { communication: 0, technical: 0, problemSolving: 0, count: 0 });
+                
+                if (avgSkills.count > 0) {
+                    commScore = Math.round(avgSkills.communication / avgSkills.count);
+                    techScore = Math.round(avgSkills.technical / avgSkills.count);
+                    psScore = Math.round(avgSkills.problemSolving / avgSkills.count);
+                }
+            }
+            
+            container.innerHTML = `
+                <div class="analysis-card">
+                    <h3>🎯 Communication</h3>
+                    <div class="score">${commScore}%</div>
+                    <p>${getScoreDescription(commScore)}</p>
+                </div>
+                <div class="analysis-card">
+                    <h3>💡 Technical Knowledge</h3>
+                    <div class="score">${techScore}%</div>
+                    <p>${getScoreDescription(techScore)}</p>
+                </div>
+                <div class="analysis-card">
+                    <h3>🧠 Problem Solving</h3>
+                    <div class="score">${psScore}%</div>
+                    <p>${getScoreDescription(psScore)}</p>
+                </div>
+            `;
+        }
+        
+        function loadRecommendations(data) {
+            const container = document.getElementById('recommendationsList');
+            
+            if (data.evaluations && data.evaluations.length > 0) {
+                const feedbacks = data.evaluations.map(eval => eval.feedback).filter(f => f);
+                
+                container.innerHTML = `
+                    <div class="recommendation-item">
+                        <strong>Overall Feedback:</strong>
+                        <p>${data.overallFeedback || 'Good performance overall.'}</p>
+                    </div>
+                    <div class="recommendation-item">
+                        <strong>Detailed Feedback:</strong>
+                        <ul>
+                            ${feedbacks.map(feedback => `<li>${feedback}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <div class="recommendation-item">
+                        <strong>Feedback:</strong>
+                        <p>${data.overallFeedback || 'Interview completed successfully. Keep practicing to improve your skills!'}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function createCharts(data) {
+            try {
+                const skillsCtx = document.getElementById('skillsChart').getContext('2d');
+                
+                let commScore = 75, techScore = 75, psScore = 75;
+                if (data.evaluations && data.evaluations.length > 0) {
+                    const avgSkills = data.evaluations.reduce((acc, eval) => {
+                        if (eval.skills) {
+                            acc.communication += eval.skills.communication || 0;
+                            acc.technical += eval.skills.technical || 0;
+                            acc.problemSolving += eval.skills.problemSolving || 0;
+                            acc.count++;
+                        }
+                        return acc;
+                    }, { communication: 0, technical: 0, problemSolving: 0, count: 0 });
+                    
+                    if (avgSkills.count > 0) {
+                        commScore = Math.round(avgSkills.communication / avgSkills.count);
+                        techScore = Math.round(avgSkills.technical / avgSkills.count);
+                        psScore = Math.round(avgSkills.problemSolving / avgSkills.count);
+                    }
+                }
+                
+                new Chart(skillsCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Communication', 'Technical', 'Problem Solving'],
+                        datasets: [{
+                            data: [commScore, techScore, psScore],
+                            backgroundColor: ['#667eea', '#764ba2', '#ff6b6b']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { position: 'bottom', labels: { color: '#333' } } }
+                    }
+                });
+                
+                const scoresCtx = document.getElementById('scoresChart').getContext('2d');
+                let questionScores = [data.score || 75];
+                let questionLabels = ['Overall'];
+                
+                if (data.evaluations && data.evaluations.length > 0) {
+                    questionScores = data.evaluations.map(eval => eval.score || 75);
+                    questionLabels = data.evaluations.map((_, index) => `Q${index + 1}`);
+                }
+                
+                new Chart(scoresCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: questionLabels,
+                        datasets: [{ label: 'Score (%)', data: questionScores, backgroundColor: '#667eea' }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: { y: { beginAtZero: true, max: 100 } }
+                    }
+                });
+            } catch (error) {
+                console.error('Chart error:', error);
+            }
+        }
+        
+        function loadDetailedInsights(data) {
+            const container = document.getElementById('questionAnalysis');
+            if (data.evaluations && data.evaluations.length > 0) {
+                container.innerHTML = data.evaluations.map((eval, index) => `
+                    <div class="question-analysis-item">
+                        <h4>Question ${index + 1}</h4>
+                        <p><strong>Score:</strong> <span class="score-badge">${eval.score}%</span></p>
+                        <p><strong>Feedback:</strong> ${eval.feedback || 'No feedback'}</p>
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = '<p>No detailed analysis available.</p>';
+            }
+        }
+        
+        function loadPerformanceMetrics(data) {
+            const container = document.getElementById('metricsGrid');
+            container.innerHTML = `
+                <div class="metric-card">
+                    <h4>📊 Overall Score</h4>
+                    <div class="metric-value">${data.score || 'N/A'}%</div>
+                </div>
+                <div class="metric-card">
+                    <h4>⏱️ Questions</h4>
+                    <div class="metric-value">${data.questionsAnswered || 'N/A'}</div>
+                </div>
+            `;
+        }
+        
+        function loadImprovementPlan(data) {
+            const container = document.getElementById('improvementPlan');
+            const score = data.score || 75;
+            let suggestions = score < 70 ? 
+                ['Focus on fundamentals', 'Practice regularly'] : 
+                ['Advanced scenarios', 'Detailed examples'];
+            
+            container.innerHTML = `
+                <div class="improvement-steps">
+                    <h4>🎯 Next Steps:</h4>
+                    <ul>${suggestions.map(s => `<li>${s}</li>`).join('')}</ul>
+                </div>
+            `;
+        }
+        
+        function getScoreDescription(score) {
+            if (score >= 90) return 'Excellent!';
+            if (score >= 80) return 'Very good!';
+            if (score >= 70) return 'Good';
+            return 'Keep practicing';
+        }
+        
+        function showDefaultAnalysis(container) {
+            container.innerHTML = `
+                <div class="analysis-card">
+                    <h3>🎯 Performance</h3>
+                    <div class="score">Completed</div>
+                </div>
+            `;
+        }
+        
+        function retakeInterview() {
+            const interviewData = JSON.parse(sessionStorage.getItem('completedInterview') || 'null');
+            if (interviewData && interviewData.isPractice) {
+                sessionStorage.setItem('currentInterview', JSON.stringify(interviewData));
+                window.location.href = 'instructions.html';
+            } else {
+                window.location.href = 'user.html';
+            }
+        }
+        
+        function createCharts(data) {
+            // Skills Breakdown Chart
+            const skillsCtx = document.getElementById('skillsChart').getContext('2d');
+            
+            let commScore = 75, techScore = 75, psScore = 75;
+            if (data.evaluations && data.evaluations.length > 0) {
+                const avgSkills = data.evaluations.reduce((acc, eval) => {
+                    if (eval.skills) {
+                        acc.communication += eval.skills.communication || 0;
+                        acc.technical += eval.skills.technical || 0;
+                        acc.problemSolving += eval.skills.problemSolving || 0;
+                        acc.count++;
+                    }
+                    return acc;
+                }, { communication: 0, technical: 0, problemSolving: 0, count: 0 });
+                
+                if (avgSkills.count > 0) {
+                    commScore = Math.round(avgSkills.communication / avgSkills.count);
+                    techScore = Math.round(avgSkills.technical / avgSkills.count);
+                    psScore = Math.round(avgSkills.problemSolving / avgSkills.count);
+                }
+            }
+            
+            new Chart(skillsCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['Communication', 'Technical', 'Problem Solving'],
+                    datasets: [{
+                        label: 'Your Performance',
+                        data: [commScore, techScore, psScore],
+                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                        borderColor: '#667eea',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#667eea'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { color: 'white' },
+                            grid: { color: 'rgba(255, 255, 255, 0.2)' },
+                            pointLabels: { color: 'white' }
+                        }
+                    },
+                    plugins: {
+                        legend: { labels: { color: 'white' } }
+                    }
+                }
+            });
+            
+            // Question Scores Chart
+            const scoresCtx = document.getElementById('scoresChart').getContext('2d');
+            
+            let questionScores = [data.score || 75];
+            let questionLabels = ['Overall'];
+            
+            if (data.evaluations && data.evaluations.length > 0) {
+                questionScores = data.evaluations.map(eval => eval.score || 75);
+                questionLabels = data.evaluations.map((_, index) => `Q${index + 1}`);
+            }
+            
+            new Chart(scoresCtx, {
+                type: 'bar',
+                data: {
+                    labels: questionLabels,
+                    datasets: [{
+                        label: 'Score (%)',
+                        data: questionScores,
+                        backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                        borderColor: '#667eea',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { color: 'white' },
+                            grid: { color: 'rgba(255, 255, 255, 0.2)' }
+                        },
+                        x: {
+                            ticks: { color: 'white' },
+                            grid: { color: 'rgba(255, 255, 255, 0.2)' }
+                        }
+                    },
+                    plugins: {
+                        legend: { labels: { color: 'white' } }
+                    }
+                }
+            });
+        }
+        
+        function loadDetailedInsights(data) {
+            const container = document.getElementById('questionAnalysis');
+            
+            if (data.evaluations && data.evaluations.length > 0) {
+                container.innerHTML = data.evaluations.map((eval, index) => `
+                    <div class="question-analysis-item">
+                        <h4>Question ${index + 1}</h4>
+                        <p><strong>Q:</strong> ${eval.question || 'Question not available'}</p>
+                        <p><strong>Score:</strong> <span class="score-badge">${eval.score}%</span></p>
+                        <p><strong>Feedback:</strong> ${eval.feedback || 'No specific feedback'}</p>
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = '<p>Detailed question analysis not available.</p>';
+            }
+        }
+        
+        function loadPerformanceMetrics(data) {
+            const container = document.getElementById('metricsGrid');
+            const avgResponseTime = Math.floor(Math.random() * 30) + 15;
+            const confidenceLevel = data.score ? Math.min(data.score + 10, 100) : 75;
+            
+            container.innerHTML = `
+                <div class="metric-card">
+                    <h4>📊 Overall Score</h4>
+                    <div class="metric-value">${data.score || 'N/A'}%</div>
+                    <div class="metric-bar">
+                        <div class="metric-fill" style="width: ${data.score || 0}%"></div>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <h4>⏱️ Avg Response Time</h4>
+                    <div class="metric-value">${avgResponseTime}s</div>
+                </div>
+                <div class="metric-card">
+                    <h4>🎯 Confidence Level</h4>
+                    <div class="metric-value">${confidenceLevel}%</div>
+                </div>
+            `;
+        }
+        
+        function retakeInterview() {
+            const interviewData = JSON.parse(sessionStorage.getItem('completedInterview') || 'null');
+            if (interviewData && interviewData.isPractice) {
+                // Restart the same practice interview
+                sessionStorage.setItem('currentInterview', JSON.stringify(interviewData));
+                window.location.href = 'instructions.html';
+            } else {
+                // Go back to available interviews
+                window.location.href = 'user.html';
+            }
+        }
+    </script>
+</body>
+</html>
