@@ -1601,3 +1601,14 @@ input:focus {
         grid-template-columns: repeat(3, 1fr);
     }
 }
+.github-link {
+    color: black;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.github-link:hover {
+    color: #333;
+    text-decoration: underline;
+}
