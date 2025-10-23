@@ -309,7 +309,7 @@ async function loadAvailableInterviews() {
                     <p><strong>Duration:</strong> ${interview.duration}</p>
                     <p><strong>Level:</strong> ${interview.level}</p>
                     <p><strong>Skills:</strong> ${interview.skills}</p>
-                    <button class="action-btn" style="margin-top: 10px;" onclick="viewInterview('${interview.title.split(' - ')[0]}', '${interview.title.split(' - ')[1]}', '${interview.level}', '${interview.duration}', '${interview.skills}')">View Interview Details</button>
+                    <button class="action-btn" style="margin-top: 10px;" onclick="showInterviewDetails('${interview.jobTitle}', '${interview.company}', '${interview.level}', '${interview.duration}', '${interview.skills}', '${interview.date}')">View Interview Details</button>
                 </div>
             </div>
         `).join('');

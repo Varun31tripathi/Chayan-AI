@@ -47,3 +47,8 @@ Thumbs.db
 # Build outputs
 dist/
 build/
+
+# Test files (exclude from deployments)
+test-firebase.html
+verify-existing-data.js
+FIREBASE_TEST_REPORT.md

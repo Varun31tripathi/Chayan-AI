@@ -14,7 +14,7 @@
                 <a href="dashboard.html" class="nav-item">📊 Dashboard</a>
                 <a href="#" onclick="toggleOngoingInterviews()" class="nav-item">📋 Available Interviews</a>
                 <a href="#" onclick="togglePracticeInterviews()" class="nav-item">🎯 Practice Interviews</a>
-                <a href="#" onclick="toggleInterviews()" class="nav-item">📚 My Interviews</a>
+                <a href="#" onclick="openInterviewsPopup()" class="nav-item">📚 My Interviews</a>
                 <a href="#" onclick="toggleProfile()" class="nav-item">👤 Profile</a>
                 <a href="index.html" class="nav-item logout">🚪 Logout</a>
             </nav>
@@ -29,7 +29,7 @@
             <div class="dashboard-actions">
                 <button class="action-btn" onclick="toggleOngoingInterviews()">Available Interviews</button>
                 <button class="action-btn" onclick="togglePracticeInterviews()">Practice Interviews</button>
-                <button class="action-btn secondary" onclick="toggleInterviews()">View Past Interviews</button>
+                <button class="action-btn secondary" onclick="openInterviewsPopup()">View Past Interviews</button>
                 <button class="action-btn secondary" onclick="toggleProfile()">Update Profile</button>
             </div>
         
@@ -133,19 +133,572 @@
                     <label>Experience (Years)</label>
                     <input type="number" id="profileExperience" readonly>
                 </div>
-                <button class="action-btn" onclick="editProfile()">Edit Profile</button>
+                <button class="action-btn" id="editProfileBtn" onclick="editProfile()">✏️ Edit Profile</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Interview Details Popup -->
+<div id="interviewDetailsPopup" class="modern-popup" style="display: none;">
+    <div class="modern-popup-overlay" onclick="closeInterviewDetailsPopup()"></div>
+    <div class="modern-popup-content">
+        <div class="popup-header">
+            <h2 id="interviewTitle">📋 Interview Details</h2>
+            <button class="close-btn" onclick="closeInterviewDetailsPopup()">✕</button>
+        </div>
+        
+        <div class="interview-info-grid">
+            <div class="info-card">
+                <div class="info-icon">💼</div>
+                <div class="info-content">
+                    <label>Job Title</label>
+                    <span id="detailJobTitle">-</span>
+                </div>
+            </div>
+            
+            <div class="info-card">
+                <div class="info-icon">🏢</div>
+                <div class="info-content">
+                    <label>Company</label>
+                    <span id="detailCompany">-</span>
+                </div>
+            </div>
+            
+            <div class="info-card">
+                <div class="info-icon">⏱️</div>
+                <div class="info-content">
+                    <label>Duration</label>
+                    <span id="detailDuration">-</span>
+                </div>
+            </div>
+            
+            <div class="info-card">
+                <div class="info-icon">📊</div>
+                <div class="info-content">
+                    <label>Experience Level</label>
+                    <span id="detailLevel">-</span>
+                </div>
+            </div>
+            
+            <div class="info-card full-width">
+                <div class="info-icon">🛠️</div>
+                <div class="info-content">
+                    <label>Skills Required</label>
+                    <span id="detailSkills">-</span>
+                </div>
+            </div>
+            
+            <div class="info-card">
+                <div class="info-icon">📅</div>
+                <div class="info-content">
+                    <label>Posted Date</label>
+                    <span id="detailDate">-</span>
+                </div>
             </div>
         </div>
         
-        <div id="interviewsSection" class="interviews-section" style="display: none;">
-            <h2>My Interview History</h2>
-            <div class="interviews-list" id="pastInterviewsList">
-                <!-- User's completed interviews will appear here -->
-            </div>
-
+        <div class="popup-actions">
+            <button class="modern-btn secondary" onclick="closeInterviewDetailsPopup()">Cancel</button>
+            <button class="modern-btn primary" onclick="startInterviewFromPopup()">🚀 Start Interview</button>
         </div>
     </div>
 </div>
+
+<!-- Profile Popup -->
+<div id="profilePopup" class="modern-popup" style="display: none;">
+    <div class="modern-popup-overlay" onclick="closeProfilePopup()"></div>
+    <div class="modern-popup-content">
+        <div class="popup-header">
+            <h2>👤 User Profile</h2>
+            <button class="close-btn" onclick="closeProfilePopup()">✕</button>
+        </div>
+        
+        <div class="profile-form">
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="profileName" readonly>
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="profileEmail" readonly>
+            </div>
+            <div class="form-group">
+                <label>User Type</label>
+                <input type="text" id="profileType" readonly>
+            </div>
+            <div class="form-group">
+                <label>Member Since</label>
+                <input type="text" id="profileRegistered" readonly>
+            </div>
+            <div class="form-group">
+                <label>Current Role</label>
+                <input type="text" id="profileCurrentRole" readonly>
+            </div>
+            <div class="form-group">
+                <label>Skills</label>
+                <input type="text" id="profileSkills" readonly>
+            </div>
+            <div class="form-group">
+                <label>Projects</label>
+                <textarea id="profileProjects" readonly rows="3"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Experience (Years)</label>
+                <input type="number" id="profileExperience" readonly>
+            </div>
+        </div>
+        
+        <div class="popup-actions">
+            <button class="modern-btn secondary" onclick="closeProfilePopup()">Close</button>
+            <button class="modern-btn primary" id="editProfileBtn" onclick="editProfile()">✏️ Edit Profile</button>
+        </div>
+    </div>
+</div>
+
+<!-- My Interviews Popup -->
+<div id="interviewsPopup" class="modern-popup" style="display: none;">
+    <div class="modern-popup-overlay" onclick="closeInterviewsPopup()"></div>
+    <div class="modern-popup-content">
+        <div class="popup-header">
+            <h2>📚 My Interview History</h2>
+            <button class="close-btn" onclick="closeInterviewsPopup()">✕</button>
+        </div>
+        
+        <div class="interviews-list" id="pastInterviewsList">
+            <!-- User's completed interviews will appear here -->
+        </div>
+        
+        <div class="popup-actions">
+            <button class="modern-btn secondary" onclick="closeInterviewsPopup()">Close</button>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Modern Section Styling */
+.interviews-section, .profile-section {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    padding: 32px;
+    margin: 24px 0;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    animation: sectionFadeIn 0.6s ease-out;
+}
+
+@keyframes sectionFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.interviews-section h2, .profile-section h2 {
+    color: white;
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0 0 24px 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.profile-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+    padding: 0;
+}
+
+.profile-form .form-group {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.profile-form .form-group:nth-child(7) {
+    grid-column: 1 / -1;
+}
+
+.profile-form label {
+    color: #b8c5d6;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.profile-form input,
+.profile-form textarea {
+    background: rgba(255, 255, 255, 0.08);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 16px 20px;
+    color: white;
+    font-family: inherit;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.profile-form input:focus,
+.profile-form textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    transform: translateY(-2px);
+}
+
+.interviews-list {
+    display: grid;
+    gap: 20px;
+    max-height: none;
+    padding: 0;
+}
+
+.interview-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    backdrop-filter: blur(15px);
+    padding: 24px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.interview-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 0 4px 4px 0;
+}
+
+.interview-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%);
+}
+
+.interview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.interview-header h3 {
+    margin: 0;
+    color: white;
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+.interview-date {
+    color: #b8c5d6;
+    font-size: 0.9rem;
+    background: rgba(102, 126, 234, 0.2);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+.interview-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.interview-details p {
+    margin: 0;
+    color: #e2e8f0;
+    font-size: 0.95rem;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    border-left: 3px solid #667eea;
+}
+
+.interview-details strong {
+    color: #b8c5d6;
+    display: block;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+@media (max-width: 768px) {
+    .interviews-section, .profile-section {
+        padding: 20px;
+        margin: 16px 0;
+        border-radius: 16px;
+    }
+    
+    .profile-form {
+        grid-template-columns: 1fr;
+    }
+    
+    .profile-form .form-group:nth-child(7) {
+        grid-column: 1;
+    }
+    
+    .interview-details {
+        grid-template-columns: 1fr;
+    }
+    
+    .interviews-section h2, .profile-section h2 {
+        font-size: 1.6rem;
+    }
+}
+</style>
+
+
+
+<style>
+.modern-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modern-popup-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+}
+
+.modern-popup-content {
+    position: relative;
+    background: linear-gradient(135deg, #2a2a2a 0%, #1e1e1e 100%);
+    border-radius: 20px;
+    padding: 0;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    animation: popupSlideIn 0.3s ease-out;
+}
+
+@keyframes popupSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.popup-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 20px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 20px 20px 0 0;
+}
+
+.popup-header h2 {
+    margin: 0;
+    color: white;
+    font-size: 1.4rem;
+    font-weight: 600;
+}
+
+.close-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+.interview-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    padding: 30px;
+}
+
+.info-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.2s ease;
+}
+
+.info-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-2px);
+}
+
+.info-card.full-width {
+    grid-column: 1 / -1;
+}
+
+.info-icon {
+    font-size: 24px;
+    width: 40px;
+    height: 40px;
+    background: rgba(102, 126, 234, 0.2);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.info-content {
+    flex: 1;
+}
+
+.info-content label {
+    display: block;
+    color: #aaa;
+    font-size: 0.85rem;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.info-content span {
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    word-break: break-word;
+}
+
+.popup-actions {
+    padding: 20px 30px 30px;
+    display: flex;
+    gap: 15px;
+    justify-content: flex-end;
+}
+
+.modern-btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.modern-btn.secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ccc;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.modern-btn.secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+}
+
+
+@media (max-width: 768px) {
+    .interview-info-grid {
+        grid-template-columns: 1fr;
+        padding: 20px;
+    }
+    
+    .modern-popup-content {
+        width: 95%;
+        margin: 20px;
+    }
+    
+    .popup-actions {
+        flex-direction: column;
+    }
+    
+    .modern-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+.modern-btn.primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.modern-btn.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+@media (max-width: 768px) {
+    .interview-info-grid {
+        grid-template-columns: 1fr;
+        padding: 20px;
+    }
+    
+    .modern-popup-content {
+        width: 95%;
+        margin: 20px;
+    }
+    
+    .popup-actions {
+        flex-direction: column;
+    }
+    
+    .modern-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+
 
     <script>
         // Check if user is logged in and load user data
@@ -178,6 +731,135 @@
             } else {
                 document.getElementById('profileRegistered').value = 'Not available';
             }
+        }
+        
+        let currentInterviewData = null;
+        
+        function showInterviewDetails(jobTitle, company, level, duration, skills, date) {
+            currentInterviewData = { jobTitle, company, level, duration, skills, date };
+            
+            document.getElementById('detailJobTitle').textContent = jobTitle || 'Not specified';
+            document.getElementById('detailCompany').textContent = company || 'Not specified';
+            document.getElementById('detailDuration').textContent = duration || 'Not specified';
+            document.getElementById('detailLevel').textContent = level || 'Not specified';
+            document.getElementById('detailSkills').textContent = skills || 'Not specified';
+            document.getElementById('detailDate').textContent = date || 'Not specified';
+            
+            document.getElementById('interviewDetailsPopup').style.display = 'flex';
+        }
+        
+        function closeInterviewDetailsPopup() {
+            document.getElementById('interviewDetailsPopup').style.display = 'none';
+        }
+        
+        function startInterviewFromPopup() {
+            if (currentInterviewData) {
+                closeInterviewDetailsPopup();
+                viewInterview(currentInterviewData.jobTitle, currentInterviewData.company, currentInterviewData.level, currentInterviewData.duration, currentInterviewData.skills);
+            }
+        }
+        
+        function toggleProfile() {
+            hideAllSections();
+            document.getElementById('profileSection').style.display = 'block';
+        }
+        
+        function hideAllSections() {
+            const sections = ['ongoingInterviewsSection', 'practiceInterviewsSection', 'profileSection', 'interviewsSection'];
+            sections.forEach(id => {
+                const section = document.getElementById(id);
+                if (section) section.style.display = 'none';
+            });
+        }
+        
+        async function openInterviewsPopup() {
+            await loadUserInterviews();
+            document.getElementById('interviewsPopup').style.display = 'flex';
+        }
+        
+        function closeInterviewsPopup() {
+            document.getElementById('interviewsPopup').style.display = 'none';
+        }
+        
+        function editProfile() {
+            const inputs = document.querySelectorAll('#profileSection input, #profileSection textarea');
+            const button = document.getElementById('editProfileBtn');
+            
+            if (button && button.textContent.includes('Edit')) {
+                inputs.forEach(input => {
+                    if (input.id !== 'profileEmail' && input.id !== 'profileType' && input.id !== 'profileRegistered') {
+                        input.removeAttribute('readonly');
+                        input.style.background = 'rgba(255, 255, 255, 0.15)';
+                        input.style.borderColor = '#667eea';
+                    }
+                });
+                button.innerHTML = '💾 Save Profile';
+            } else if (button) {
+                inputs.forEach(input => {
+                    input.setAttribute('readonly', true);
+                    input.style.background = 'rgba(255, 255, 255, 0.1)';
+                    input.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                });
+                button.innerHTML = '✏️ Edit Profile';
+                alert('Profile saved successfully!');
+            }
+        }
+        
+        function viewInterview(jobTitle, company, level, duration, skills) {
+            const params = new URLSearchParams({
+                jobTitle: jobTitle,
+                company: company,
+                level: level,
+                duration: duration,
+                skills: skills
+            });
+            window.location.href = `instructions.html?${params.toString()}`;
+        }
+        
+        async function loadUserInterviews() {
+            const container = document.getElementById('pastInterviewsList');
+            if (container) {
+                container.innerHTML = '<p style="text-align: center; color: #666; opacity: 0.7;">No completed interviews yet.</p>';
+            }
+        }
+        
+        function closeInterviewsPopup() {
+            document.getElementById('interviewsPopup').style.display = 'none';
+        }
+        
+        function editProfile() {
+            const inputs = document.querySelectorAll('#profilePopup input, #profilePopup textarea');
+            const button = document.getElementById('editProfileBtn');
+            
+            if (button.textContent.includes('Edit')) {
+                inputs.forEach(input => {
+                    if (input.id !== 'profileEmail' && input.id !== 'profileType' && input.id !== 'profileRegistered') {
+                        input.removeAttribute('readonly');
+                        input.style.background = 'rgba(255, 255, 255, 0.15)';
+                        input.style.borderColor = '#667eea';
+                    }
+                });
+                button.innerHTML = '💾 Save Profile';
+            } else {
+                inputs.forEach(input => {
+                    input.setAttribute('readonly', true);
+                    input.style.background = 'rgba(255, 255, 255, 0.1)';
+                    input.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                });
+                button.innerHTML = '✏️ Edit Profile';
+                alert('Profile saved successfully!');
+            }
+        }
+        
+        function viewInterview(jobTitle, company, level, duration, skills) {
+            const params = new URLSearchParams({
+                jobTitle: jobTitle,
+                company: company,
+                level: level,
+                duration: duration,
+                skills: skills
+            });
+            window.location.href = `instructions.html?${params.toString()}`;
         }
     </script>
     <script type="module">
