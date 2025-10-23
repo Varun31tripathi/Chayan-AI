@@ -483,7 +483,7 @@ async function editProfile() {
     
     if (button.textContent === 'Edit Profile') {
         inputs.forEach(input => {
-            if (input.id !== 'profileEmail' && input.id !== 'profileType' && input.id !== 'profileRegistered') {
+            if (input.id !== 'interviewerEmail' && input.id !== 'interviewerType' && input.id !== 'interviewerRegistered') {
                 input.removeAttribute('readonly');
             }
         });
@@ -493,12 +493,19 @@ async function editProfile() {
             const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
             if (!currentUser) return;
             
+            const nameField = document.getElementById('interviewerName');
+            const roleField = document.getElementById('interviewerRole');
+            const experienceField = document.getElementById('interviewerExperience');
+            
+            if (!nameField || !roleField || !experienceField) {
+                alert('Profile fields not found');
+                return;
+            }
+            
             const updatedData = {
-                name: document.getElementById('profileName').value,
-                currentRole: document.getElementById('profileCurrentRole').value,
-                skills: document.getElementById('profileSkills').value,
-                projects: document.getElementById('profileProjects').value,
-                experience: document.getElementById('profileExperience').value
+                name: nameField.value,
+                role: roleField.value,
+                experience: experienceField.value
             };
             
             await window.setDoc(window.doc(window.firebaseDb, 'users', currentUser.uid), updatedData, { merge: true });
