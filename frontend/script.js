@@ -39,32 +39,93 @@ function sendMessage() {
 
 function addMessage(text, sender) {
     const container = document.getElementById('chatContainer');
+    if (!container) return;
+    
     const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${sender}-message`;
-    messageDiv.textContent = text;
+    messageDiv.className = `message ${sender === 'user' ? 'user' : 'ai'}-message`;
+    messageDiv.textContent = text; // textContent prevents XSS
     container.appendChild(messageDiv);
     container.scrollTop = container.scrollHeight;
 }
 
 function openLoginPopup() {
-    document.getElementById('loginPopup').style.display = 'block';
+    const popup = document.getElementById('loginPopup');
+    if (popup) {
+        popup.style.display = 'block';
+        document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        // Focus on the first input field for better accessibility
+        const firstInput = popup.querySelector('input[type="email"]');
+        if (firstInput) {
+            setTimeout(() => firstInput.focus(), 300);
+        }
+    }
 }
 
 function closeLoginPopup() {
-    document.getElementById('loginPopup').style.display = 'none';
+    const popup = document.getElementById('loginPopup');
+    if (popup) {
+        popup.style.display = 'none';
+        document.body.style.overflow = ''; // Restore scrolling
+        // Clear form
+        const form = popup.querySelector('form');
+        if (form) form.reset();
+    }
 }
 
 function openSignupPopup() {
-    document.getElementById('signupPopup').style.display = 'block';
+    const popup = document.getElementById('signupPopup');
+    if (popup) {
+        popup.style.display = 'block';
+        document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        // Focus on the first input field for better accessibility
+        const firstInput = popup.querySelector('input[placeholder="Full Name"]');
+        if (firstInput) {
+            setTimeout(() => firstInput.focus(), 300);
+        }
+    }
 }
 
 function closeSignupPopup() {
-    document.getElementById('signupPopup').style.display = 'none';
+    const popup = document.getElementById('signupPopup');
+    if (popup) {
+        popup.style.display = 'none';
+        document.body.style.overflow = ''; // Restore scrolling
+        // Clear form
+        const form = popup.querySelector('form');
+        if (form) form.reset();
+    }
 }
 
 function selectUserType(type) {
-    const buttons = document.querySelectorAll('.user-type-btn');
-    buttons.forEach(btn => btn.classList.remove('active'));
+    const buttons = document.querySelectorAll('#loginPopup .user-type-btn');
+    if (buttons.length < 2) {
+        console.error('User type buttons not found');
+        return;
+    }
+    
+    buttons.forEach(btn => {
+        btn.classList.remove('active');
+        btn.style.transform = '';
+    });
+    
+    if (type === 'student') {
+        buttons[0].classList.add('active');
+    } else {
+        buttons[1].classList.add('active');
+    }
+}
+
+function selectSignupUserType(type) {
+    const buttons = document.querySelectorAll('#signupPopup .user-type-btn');
+    if (buttons.length < 2) {
+        console.error('Signup user type buttons not found');
+        return;
+    }
+    
+    buttons.forEach(btn => {
+        btn.classList.remove('active');
+        btn.style.transform = '';
+    });
     
     if (type === 'student') {
         buttons[0].classList.add('active');
@@ -75,27 +136,41 @@ function selectUserType(type) {
 
 function togglePassword() {
     const passwordField = document.getElementById('password');
-    const toggleBtn = document.querySelector('.toggle-password');
+    const toggleBtn = document.querySelector('#loginPopup .toggle-password');
+    
+    if (!passwordField || !toggleBtn) {
+        console.error('Password field or toggle button not found');
+        return;
+    }
     
     if (passwordField.type === 'password') {
         passwordField.type = 'text';
         toggleBtn.textContent = '🙈';
+        toggleBtn.setAttribute('aria-label', 'Hide password');
     } else {
         passwordField.type = 'password';
         toggleBtn.textContent = '👁';
+        toggleBtn.setAttribute('aria-label', 'Show password');
     }
 }
 
 function toggleSignupPassword() {
     const passwordField = document.getElementById('signupPassword');
-    const toggleBtn = passwordField.nextElementSibling;
+    const toggleBtn = document.querySelector('#signupPopup .toggle-password');
+    
+    if (!passwordField || !toggleBtn) {
+        console.error('Signup password field or toggle button not found');
+        return;
+    }
     
     if (passwordField.type === 'password') {
         passwordField.type = 'text';
         toggleBtn.textContent = '🙈';
+        toggleBtn.setAttribute('aria-label', 'Hide password');
     } else {
         passwordField.type = 'password';
         toggleBtn.textContent = '👁';
+        toggleBtn.setAttribute('aria-label', 'Show password');
     }
 }
 
@@ -103,21 +178,62 @@ async function handleLogin(event) {
     event.preventDefault();
     console.log('Login form submitted');
     
+    const form = event.target;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.textContent;
+    
+    // Show loading state
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Logging in...';
+    
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    if (loadingIndicator) loadingIndicator.style.display = 'block';
+    
     // Check if Firebase is loaded
-    if (!window.firebaseAuth) {
-        alert('Firebase not loaded. Please refresh the page.');
+    if (!window.firebaseAuth || !window.firebaseReady) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalBtnText;
+        if (loadingIndicator) loadingIndicator.style.display = 'none';
+        showFormError('Firebase not loaded. Please refresh the page and try again.');
         return;
     }
     
-    const form = event.target;
-    const email = form.querySelector('input[type="email"]').value;
+    const email = form.querySelector('input[type="email"]').value.trim();
     const password = form.querySelector('input[type="password"]').value;
     const activeButton = document.querySelector('#loginPopup .user-type-btn.active');
-    const userType = activeButton.textContent.toLowerCase();
+    if (!activeButton) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalBtnText;
+        if (loadingIndicator) loadingIndicator.style.display = 'none';
+        showFormError('Please select a user type.');
+        return;
+    }
+    const userType = activeButton.textContent.toLowerCase().trim();
+    
+    // Enhanced email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email) || email.length > 254) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalBtnText;
+        if (loadingIndicator) loadingIndicator.style.display = 'none';
+        showFormError('Please enter a valid email address.');
+        return;
+    }
+    
+    if (!password || password.length < 6) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalBtnText;
+        if (loadingIndicator) loadingIndicator.style.display = 'none';
+        showFormError('Password must be at least 6 characters long.');
+        return;
+    }
     
     console.log('Login attempt:', { email, userType });
     
     try {
+        // Add CSRF token validation
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        
         console.log('Calling Firebase signIn...');
         const userCredential = await window.signInWithEmailAndPassword(window.firebaseAuth, email, password);
         const user = userCredential.user;
@@ -141,57 +257,119 @@ async function handleLogin(event) {
                 closeLoginPopup();
                 
                 if (userType === 'interviewer') {
-                    window.location.href = 'interviewer.html';
+                    window.location.href = window.location.protocol === 'https:' ? 'interviewer.html' : window.location.origin.replace('http:', 'https:') + '/interviewer.html';
                 } else {
-                    window.location.href = 'user.html';
+                    window.location.href = window.location.protocol === 'https:' ? 'user.html' : window.location.origin.replace('http:', 'https:') + '/user.html';
                 }
             } else {
                 alert(`This account is registered as ${userData.type}. Please select the correct user type.`);
             }
         } else {
-            alert('User profile not found. Please contact support.');
+            showFormError('User profile not found. Please contact support.');
         }
     } catch (error) {
         console.error('Login error:', error);
+        
+        // Sanitize error messages to prevent information disclosure
+        let userMessage = 'Login failed. Please check your credentials.';
+        
         if (error.code === 'auth/user-not-found') {
-            alert('No account found with this email. Please sign up first.');
+            userMessage = 'Invalid email or password. Please check your credentials.';
         } else if (error.code === 'auth/wrong-password') {
-            alert('Incorrect password. Please try again.');
+            userMessage = 'Invalid email or password. Please check your credentials.';
         } else if (error.code === 'auth/invalid-credential') {
-            alert('Invalid email or password. Please check your credentials.');
-        } else {
-            alert('Login failed: ' + error.message);
+            userMessage = 'Invalid email or password. Please check your credentials.';
+        } else if (error.code === 'auth/network-request-failed') {
+            userMessage = 'Network error. Please check your internet connection and try again.';
         }
+        
+        showFormError(userMessage);
+    } finally {
+        // Reset button state
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalBtnText;
+        if (loadingIndicator) loadingIndicator.style.display = 'none';
     }
 }
 
-function selectSignupUserType(type) {
-    const buttons = document.querySelectorAll('#signupPopup .user-type-btn');
-    buttons.forEach(btn => btn.classList.remove('active'));
-    
-    if (type === 'student') {
-        buttons[0].classList.add('active');
-    } else {
-        buttons[1].classList.add('active');
-    }
-}
+
 
 async function handleSignup(event) {
     event.preventDefault();
     const form = event.target;
-    const name = form.querySelector('input[placeholder="Full Name"]').value;
-    const email = form.querySelector('input[type="email"]').value;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.textContent;
+    
+    const name = form.querySelector('input[placeholder="Full Name"]').value.trim();
+    const email = form.querySelector('input[type="email"]').value.trim();
     const password = form.querySelector('input[type="password"]').value;
     const confirmPassword = form.querySelector('input[placeholder="Confirm Password"]').value;
     const activeButton = document.querySelector('#signupPopup .user-type-btn.active');
-    const userType = activeButton.textContent.toLowerCase();
+    if (!activeButton) {
+        showFormError('Please select a user type.');
+        return;
+    }
+    const userType = activeButton.textContent.toLowerCase().trim();
+    
+    // Enhanced validation
+    if (!name || name.length < 2 || name.length > 50) {
+        showFormError('Please enter a valid full name (2-50 characters).');
+        return;
+    }
+    
+    // Sanitize name input
+    const nameRegex = /^[a-zA-Z\s'-]+$/;
+    if (!nameRegex.test(name)) {
+        showFormError('Name can only contain letters, spaces, hyphens, and apostrophes.');
+        return;
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email) || email.length > 254) {
+        showFormError('Please enter a valid email address.');
+        return;
+    }
+    
+    if (password.length < 8) {
+        showFormError('Password must be at least 8 characters long.');
+        return;
+    }
+    
+    // Check password strength
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    
+    if (!hasUpperCase || !hasLowerCase || !hasNumbers) {
+        showFormError('Password must contain at least one uppercase letter, one lowercase letter, and one number.');
+        return;
+    }
     
     if (password !== confirmPassword) {
-        alert('Passwords do not match!');
+        showFormError('Passwords do not match!');
+        return;
+    }
+    
+    // Show loading state
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Creating Account...';
+    
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    if (loadingIndicator) loadingIndicator.style.display = 'block';
+    
+    // Check if Firebase is loaded
+    if (!window.firebaseAuth || !window.firebaseReady) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalBtnText;
+        if (loadingIndicator) loadingIndicator.style.display = 'none';
+        showFormError('Firebase not loaded. Please refresh the page and try again.');
         return;
     }
     
     try {
+        // Add CSRF token validation
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        
         console.log('Creating user with email:', email);
         const userCredential = await createUserWithEmailAndPassword(firebaseAuth, email, password);
         const user = userCredential.user;
@@ -214,18 +392,41 @@ async function handleSignup(event) {
             ...userData
         }));
         
-        alert('Registration successful! You can now login with these credentials.');
-        closeSignupPopup();
+        showFormSuccess('Registration successful! Redirecting...');
         
-        // Redirect based on user type
-        if (userType === 'interviewer') {
-            window.location.href = 'interviewer.html';
-        } else {
-            window.location.href = 'user.html';
-        }
+        setTimeout(() => {
+            closeSignupPopup();
+            
+            // Secure redirect based on user type
+            const baseUrl = window.location.protocol === 'https:' ? '' : window.location.origin.replace('http:', 'https:');
+            if (userType === 'interviewer') {
+                window.location.href = baseUrl + '/interviewer.html';
+            } else {
+                window.location.href = baseUrl + '/user.html';
+            }
+        }, 1500);
     } catch (error) {
         console.error('Signup error:', error);
-        alert('Registration failed: ' + error.message);
+        
+        // Sanitize error messages
+        let userMessage = 'Registration failed. Please try again.';
+        
+        if (error.code === 'auth/email-already-in-use') {
+            userMessage = 'An account with this email already exists. Please use a different email or try logging in.';
+        } else if (error.code === 'auth/weak-password') {
+            userMessage = 'Password is too weak. Please choose a stronger password.';
+        } else if (error.code === 'auth/invalid-email') {
+            userMessage = 'Invalid email address. Please enter a valid email.';
+        } else if (error.code === 'auth/network-request-failed') {
+            userMessage = 'Network error. Please check your internet connection and try again.';
+        }
+        
+        showFormError(userMessage);
+    } finally {
+        // Reset button state
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalBtnText;
+        if (loadingIndicator) loadingIndicator.style.display = 'none';
     }
 }
 
@@ -299,20 +500,27 @@ async function loadAvailableInterviews() {
             return;
         }
         
-        container.innerHTML = interviews.map(interview => `
+        container.innerHTML = interviews.map(interview => {
+            const title = interview.title ? interview.title.replace(/[<>"'&]/g, match => ({'<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;', '&': '&amp;'}[match])) : 'Untitled';
+            const date = interview.date ? interview.date.replace(/[<>"'&]/g, match => ({'<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;', '&': '&amp;'}[match])) : 'Unknown';
+            const duration = interview.duration ? interview.duration.replace(/[<>"'&]/g, match => ({'<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;', '&': '&amp;'}[match])) : 'Unknown';
+            const level = interview.level ? interview.level.replace(/[<>"'&]/g, match => ({'<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;', '&': '&amp;'}[match])) : 'Unknown';
+            const skills = interview.skills ? interview.skills.replace(/[<>"'&]/g, match => ({'<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;', '&': '&amp;'}[match])) : 'Unknown';
+            return `
             <div class="interview-card">
                 <div class="interview-header">
-                    <h3>${interview.title}</h3>
-                    <span class="interview-date">Posted: ${interview.date}</span>
+                    <h3>${title}</h3>
+                    <span class="interview-date">Posted: ${date}</span>
                 </div>
                 <div class="interview-details">
-                    <p><strong>Duration:</strong> ${interview.duration}</p>
-                    <p><strong>Level:</strong> ${interview.level}</p>
-                    <p><strong>Skills:</strong> ${interview.skills}</p>
-                    <button class="action-btn" style="margin-top: 10px;" onclick="showInterviewDetails('${interview.jobTitle}', '${interview.company}', '${interview.level}', '${interview.duration}', '${interview.skills}', '${interview.date}')">View Interview Details</button>
+                    <p><strong>Duration:</strong> ${duration}</p>
+                    <p><strong>Level:</strong> ${level}</p>
+                    <p><strong>Skills:</strong> ${skills}</p>
+                    <button class="action-btn" style="margin-top: 10px;" data-interview='${JSON.stringify({jobTitle: interview.jobTitle, company: interview.company, level: interview.level, duration: interview.duration, skills: interview.skills, date: interview.date})}' onclick="showInterviewDetailsSecure(this)">View Interview Details</button>
                 </div>
             </div>
-        `).join('');
+            `;
+        }).join('');
     } catch (error) {
         console.error('Error loading interviews:', error);
         container.innerHTML = '<p style="text-align: center; color: #666; opacity: 0.7;">Error loading interviews.</p>';
@@ -320,19 +528,42 @@ async function loadAvailableInterviews() {
 }
 
 function viewInterview(jobTitle, company, level, duration, skills) {
-    const params = new URLSearchParams({
-        jobTitle: jobTitle,
-        company: company,
-        level: level,
-        duration: duration,
-        skills: skills
-    });
-    window.location.href = `instructions.html?${params.toString()}`;
+    // Validate and sanitize inputs
+    const sanitizedParams = {
+        jobTitle: jobTitle ? String(jobTitle).substring(0, 100) : '',
+        company: company ? String(company).substring(0, 100) : '',
+        level: level ? String(level).substring(0, 50) : '',
+        duration: duration ? String(duration).substring(0, 50) : '',
+        skills: skills ? String(skills).substring(0, 200) : ''
+    };
+    
+    const params = new URLSearchParams(sanitizedParams);
+    const baseUrl = window.location.protocol === 'https:' ? '' : window.location.origin.replace('http:', 'https:');
+    window.location.href = baseUrl + `/instructions.html?${params.toString()}`;
+}
+
+function showInterviewDetailsSecure(button) {
+    try {
+        const interviewData = JSON.parse(button.getAttribute('data-interview'));
+        viewInterview(interviewData.jobTitle, interviewData.company, interviewData.level, interviewData.duration, interviewData.skills);
+    } catch (error) {
+        console.error('Error parsing interview data:', error);
+        alert('Error loading interview details.');
+    }
 }
 
 function logout() {
-    localStorage.removeItem('currentUser');
-    window.location.href = 'index.html';
+    try {
+        localStorage.removeItem('currentUser');
+        sessionStorage.clear();
+        if (window.firebaseAuth && window.firebaseAuth.currentUser) {
+            window.signOut(window.firebaseAuth);
+        }
+    } catch (error) {
+        console.error('Logout error:', error);
+    }
+    const baseUrl = window.location.protocol === 'https:' ? '' : window.location.origin.replace('http:', 'https:');
+    window.location.href = baseUrl + '/index.html';
 }
 
 function togglePracticeInterviews() {
@@ -393,17 +624,26 @@ const practiceQuestions = {
 };
 
 function startPracticeInterview(jobTitle, company, level, duration, skills) {
-    sessionStorage.setItem('currentInterview', JSON.stringify({
-        jobTitle: jobTitle,
-        company: company,
-        level: level,
-        duration: duration,
-        skills: skills,
+    // Validate inputs
+    if (!jobTitle || !company || !level || !duration) {
+        alert('Missing required interview parameters.');
+        return;
+    }
+    
+    const sanitizedData = {
+        jobTitle: String(jobTitle).substring(0, 100),
+        company: String(company).substring(0, 100),
+        level: String(level).substring(0, 50),
+        duration: String(duration).substring(0, 50),
+        skills: skills ? String(skills).substring(0, 200) : '',
         isPractice: true,
         practiceQuestions: practiceQuestions[jobTitle] || []
-    }));
+    };
     
-    window.location.href = 'instructions.html';
+    sessionStorage.setItem('currentInterview', JSON.stringify(sanitizedData));
+    
+    const baseUrl = window.location.protocol === 'https:' ? '' : window.location.origin.replace('http:', 'https:');
+    window.location.href = baseUrl + '/instructions.html';
 }
 
 async function saveCompletedInterview(interviewData) {
@@ -421,6 +661,11 @@ async function saveCompletedInterview(interviewData) {
         };
         
         // Save to user's interview history
+        // Validate user session before saving
+        if (!currentUser.uid || !window.firebaseAuth.currentUser) {
+            throw new Error('Invalid user session');
+        }
+        
         await window.addDoc(window.collection(window.firebaseDb, 'userInterviews'), completedInterview);
         
         // Save candidate result for interviewer view
@@ -466,6 +711,11 @@ async function handleCreateInterview(event) {
             createdAt: new Date()
         };
         
+        // Validate user permissions
+        if (!currentUser || currentUser.type !== 'interviewer') {
+            throw new Error('Unauthorized: Only interviewers can create interviews');
+        }
+        
         await window.addDoc(window.collection(window.firebaseDb, 'availableInterviews'), interviewData);
         
         alert('Interview created successfully! It will be available for candidates.');
@@ -508,6 +758,11 @@ async function editProfile() {
                 experience: experienceField.value
             };
             
+            // Validate user ownership
+            if (!window.firebaseAuth.currentUser || window.firebaseAuth.currentUser.uid !== currentUser.uid) {
+                throw new Error('Unauthorized: Cannot update another user\'s profile');
+            }
+            
             await window.setDoc(window.doc(window.firebaseDb, 'users', currentUser.uid), updatedData, { merge: true });
             
             // Update localStorage
@@ -526,6 +781,45 @@ async function editProfile() {
     }
 }
 
+// Helper functions for form feedback
+function showFormError(message) {
+    // Remove any existing error/success messages
+    const existingMessages = document.querySelectorAll('.form-error, .form-success');
+    existingMessages.forEach(msg => msg.remove());
+    
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'form-error show';
+    errorDiv.textContent = message;
+    
+    // Add to the active popup
+    const activePopup = document.querySelector('.popup[style*="block"] .popup-content form');
+    if (activePopup) {
+        activePopup.appendChild(errorDiv);
+        setTimeout(() => {
+            if (errorDiv.parentNode) {
+                errorDiv.classList.remove('show');
+                setTimeout(() => errorDiv.remove(), 300);
+            }
+        }, 5000);
+    }
+}
+
+function showFormSuccess(message) {
+    // Remove any existing error/success messages
+    const existingMessages = document.querySelectorAll('.form-error, .form-success');
+    existingMessages.forEach(msg => msg.remove());
+    
+    const successDiv = document.createElement('div');
+    successDiv.className = 'form-success';
+    successDiv.textContent = message;
+    
+    // Add to the active popup
+    const activePopup = document.querySelector('.popup[style*="block"] .popup-content form');
+    if (activePopup) {
+        activePopup.appendChild(successDiv);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const userInput = document.getElementById('userInput');
     if (userInput) {
@@ -533,6 +827,65 @@ document.addEventListener('DOMContentLoaded', function() {
             if (e.key === 'Enter') sendMessage();
         });
     }
+    
+    // Add keyboard navigation for popups
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            // Close any open popups
+            const openPopups = document.querySelectorAll('.popup[style*="block"], .modern-popup[style*="flex"]');
+            openPopups.forEach(popup => {
+                if (popup.id === 'loginPopup') {
+                    closeLoginPopup();
+                } else if (popup.id === 'signupPopup') {
+                    closeSignupPopup();
+                } else {
+                    popup.style.display = 'none';
+                }
+            });
+            document.body.style.overflow = '';
+        }
+    });
+    
+    // Close popup when clicking outside
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('popup') || e.target.classList.contains('modern-popup-overlay')) {
+            if (e.target.id === 'loginPopup') {
+                closeLoginPopup();
+            } else if (e.target.id === 'signupPopup') {
+                closeSignupPopup();
+            } else {
+                e.target.style.display = 'none';
+                document.body.style.overflow = '';
+            }
+        }
+    });
+    
+    // Clear error messages when user starts typing
+    document.addEventListener('input', function(e) {
+        if (e.target.matches('.popup-content input')) {
+            const errorMessages = document.querySelectorAll('.form-error');
+            errorMessages.forEach(msg => {
+                msg.classList.remove('show');
+                setTimeout(() => msg.remove(), 300);
+            });
+        }
+    });
+    
+    // Prevent popup content clicks from closing the popup
+    document.querySelectorAll('.popup-content, .modern-popup-content').forEach(content => {
+        content.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    });
+    
+    // Add smooth transitions for popups
+    document.querySelectorAll('.popup').forEach(popup => {
+        popup.addEventListener('transitionend', function(e) {
+            if (e.target === popup && popup.style.display === 'none') {
+                document.body.style.overflow = '';
+            }
+        });
+    });
 });
 // Firestore functions for interview management
 async function loadUserInterviews() {
@@ -559,19 +912,26 @@ async function loadUserInterviews() {
             return;
         }
         
-        container.innerHTML = interviews.map(interview => `
+        container.innerHTML = interviews.map(interview => {
+            const title = interview.title ? interview.title.replace(/[<>"'&]/g, match => ({'<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;', '&': '&amp;'}[match])) : 'Untitled';
+            const completedAt = interview.completedAt ? interview.completedAt.replace(/[<>"'&]/g, match => ({'<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;', '&': '&amp;'}[match])) : 'Unknown';
+            const duration = interview.duration ? interview.duration.replace(/[<>"'&]/g, match => ({'<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;', '&': '&amp;'}[match])) : 'Unknown';
+            const status = interview.status ? interview.status.replace(/[<>"'&]/g, match => ({'<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;', '&': '&amp;'}[match])) : 'Unknown';
+            const questionsAnswered = interview.questionsAnswered ? interview.questionsAnswered.replace(/[<>"'&]/g, match => ({'<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;', '&': '&amp;'}[match])) : 'Unknown';
+            return `
             <div class="interview-card">
                 <div class="interview-header">
-                    <h3>${interview.title}</h3>
-                    <span class="interview-date">${interview.completedAt}</span>
+                    <h3>${title}</h3>
+                    <span class="interview-date">${completedAt}</span>
                 </div>
                 <div class="interview-details">
-                    <p><strong>Duration:</strong> ${interview.duration}</p>
-                    <p><strong>Status:</strong> ${interview.status}</p>
-                    <p><strong>Questions:</strong> ${interview.questionsAnswered}</p>
+                    <p><strong>Duration:</strong> ${duration}</p>
+                    <p><strong>Status:</strong> ${status}</p>
+                    <p><strong>Questions:</strong> ${questionsAnswered}</p>
                 </div>
             </div>
-        `).join('');
+            `;
+        }).join('');
     } catch (error) {
         console.error('Error loading user interviews:', error);
         container.innerHTML = '<p style="text-align: center; color: #666; opacity: 0.7;">Error loading interviews.</p>';
@@ -602,19 +962,26 @@ async function loadCandidatesForInterviewer() {
             return;
         }
         
-        container.innerHTML = candidates.map(candidate => `
+        container.innerHTML = candidates.map(candidate => {
+            const candidateName = candidate.candidateName ? candidate.candidateName.replace(/[<>"'&]/g, match => ({'<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;', '&': '&amp;'}[match])) : 'Unknown';
+            const jobTitle = candidate.jobTitle ? candidate.jobTitle.replace(/[<>"'&]/g, match => ({'<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;', '&': '&amp;'}[match])) : 'Unknown';
+            const completedAt = candidate.completedAt ? candidate.completedAt.replace(/[<>"'&]/g, match => ({'<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;', '&': '&amp;'}[match])) : 'Unknown';
+            const duration = candidate.duration ? candidate.duration.replace(/[<>"'&]/g, match => ({'<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;', '&': '&amp;'}[match])) : 'Unknown';
+            const score = candidate.score ? Math.max(0, Math.min(100, parseInt(candidate.score))) : 0;
+            return `
             <div class="interview-card">
                 <div class="interview-header">
-                    <h3>${candidate.candidateName} - ${candidate.jobTitle}</h3>
-                    <span class="interview-date">${candidate.completedAt}</span>
+                    <h3>${candidateName} - ${jobTitle}</h3>
+                    <span class="interview-date">${completedAt}</span>
                 </div>
                 <div class="interview-details">
-                    <p><strong>Score:</strong> ${candidate.score}%</p>
-                    <p><strong>Duration:</strong> ${candidate.duration}</p>
-                    <p><strong>Status:</strong> <span class="status ${candidate.score >= 80 ? 'passed' : 'pending'}">${candidate.score >= 80 ? 'Recommended' : 'Under Review'}</span></p>
+                    <p><strong>Score:</strong> ${score}%</p>
+                    <p><strong>Duration:</strong> ${duration}</p>
+                    <p><strong>Status:</strong> <span class="status ${score >= 80 ? 'passed' : 'pending'}">${score >= 80 ? 'Recommended' : 'Under Review'}</span></p>
                 </div>
             </div>
-        `).join('');
+            `;
+        }).join('');
     } catch (error) {
         console.error('Error loading candidates:', error);
         container.innerHTML = '<p style="text-align: center; color: #666; opacity: 0.7;">Error loading candidates.</p>';
