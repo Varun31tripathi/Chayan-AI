@@ -1,5 +1,4 @@
-import './style.css';
-import './dashboard-styles.css';
+// Remove import statements as they're not supported in browser JS
 document.addEventListener("DOMContentLoaded", () => {
 
 
@@ -473,12 +472,23 @@ function validateLoginForm(username, password) {
   return null;
 }
 
-// --- LOGIN ---
-loginBtn.addEventListener("click", async () => {
+// Handle login form submission
+function handleLogin(event) {
+  event.preventDefault();
+  console.log('Login form submitted');
+  
   try {
+    const usernameField = document.getElementById("username");
+    const passwordField = document.getElementById("password");
+    
+    if (!usernameField || !passwordField) {
+      showModalError('Form fields not found. Please refresh the page.');
+      return;
+    }
+    
     const credentials = {
-      username: document.getElementById("username").value.trim(),
-      password: document.getElementById("password").value.trim()
+      username: usernameField.value.trim(),
+      password: passwordField.value.trim()
     };
 
     const validationError = validateLoginForm(credentials.username, credentials.password);
@@ -487,37 +497,35 @@ loginBtn.addEventListener("click", async () => {
       return;
     }
 
-    try {
-      // Check demo accounts first
-      const accounts = JSON.parse(localStorage.getItem('demoAccounts') || '{}');
-      console.log('Available accounts:', Object.keys(accounts));
-      const account = accounts[credentials.username];
-      console.log('Login attempt for:', credentials.username, 'Account found:', !!account);
-      
-      if (account && account.password === credentials.password) {
-        const sessionData = {
-          email: credentials.username,
-          name: account.name,
-          sessionToken: generateSessionToken(),
-          loginTime: Date.now(),
-          accountCreated: true
-        };
-        setSecureItem('userSession', sessionData);
-        loginModal.style.display = 'none';
-        showSection('home');
-        manageFocus('home');
-      } else {
-        showModalError('Invalid credentials or account not found. Please create an account first.');
-      }
-    } catch (error) {
-      showModalError('Login failed. Please try again.');
-      console.error('Login error:', error);
+    // Check demo accounts first
+    const accounts = JSON.parse(localStorage.getItem('demoAccounts') || '{}');
+    const account = accounts[credentials.username];
+    
+    if (account && account.password === credentials.password) {
+      const sessionData = {
+        email: credentials.username,
+        name: account.name,
+        sessionToken: generateSessionToken(),
+        loginTime: Date.now(),
+        accountCreated: true
+      };
+      setSecureItem('userSession', sessionData);
+      loginModal.style.display = 'none';
+      showSection('home');
+      manageFocus('home');
+    } else {
+      showModalError('Invalid credentials or account not found. Please create an account first.');
     }
   } catch (error) {
-    showModalError("Login failed. Please try again.");
-    console.error("Login error:", error);
+    showModalError('Login failed. Please try again.');
+    console.error('Login error:', error);
   }
-});
+}
+
+// --- LOGIN ---
+if (loginBtn) {
+  loginBtn.addEventListener("click", handleLogin);
+}
 
 // --- LOGOUT ---
 logoutBtn.addEventListener("click", async () => {

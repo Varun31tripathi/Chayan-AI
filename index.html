@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://identitytoolkit.googleapis.com; object-src 'none';">
   <title>🏆ChayanAI</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -48,15 +50,15 @@
   <div id="loginModal" class="modal">
     <div class="modal-content">
       <span class="close" id="closeModal">&times;</span>
-      <div id="loginForm">
+      <form id="loginForm" onsubmit="handleLogin(event)">
         <h1>Welcome Back!</h1>
         <p>Sign in to continue to your AI Interview.</p>
         <input type="email" id="username" placeholder="Email" required />
         <input type="password" id="password" placeholder="Password" minlength="6" required />
-        <button id="loginBtn">Login</button>
+        <button type="button" id="loginBtn">Login</button>
         <p class="note">Demo: demo@test.com / demo123</p>
         <p class="switch-form">Don't have an account? <a href="#" id="showSignup">Sign up</a></p>
-      </div>
+      </form>
       <div id="signupForm" style="display:none">
         <h1>Create Account</h1>
         <p>Join ChayanAI to start practicing.</p>
